@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Payment-Mapper">
+	
+	<select id="selectPaymentSequenceNextValue" resultType="int">
+		select payment_seq.nextVal
+		from dual
+	</select>
+	
+	<select id="selectPaymentRequestList" parameterType="hashMap" resultType="payment">
+		SELECT
+		    a.*,
+			c.cl_name charge_wh_name	    
+		FROM
+		    (SELECT
+		        i.wh_code,
+		        p.pay_no,
+		        p.pay_ymd,
+		        p.content,
+		        p.pay_chg,
+		        p.sts_code
+		    FROM
+		        payment p, in_order i
+		    WHERE
+		        p.pay_no = i.pay_no
+		        and p.sts_code = 'PY000' or p.sts_code = 'PY001'
+		        and i.co_code = #{co_code}
+		    ORDER BY p.pay_no DESC) a, client c
+		WHERE
+		    a.wh_code = c.cl_code
+	</select>
+	
+	<select id="selectPaymentRequestListRowCnt" parameterType="hashMap" resultType="int">
+		SELECT
+		    COUNT(*)
+		FROM
+		    (SELECT
+		        i.wh_code,
+		        p.pay_no,
+		        p.pay_ymd,
+		        p.content,
+		        p.pay_chg,
+		        p.sts_code
+		    FROM
+		        payment p, in_order i
+		    WHERE
+		        p.pay_no = i.pay_no
+		        and p.sts_code = 'PY000' or p.sts_code = 'PY001'
+		        and i.co_code = #{co_code}
+		    ORDER BY p.pay_no DESC) a, client c
+		WHERE
+		    a.wh_code = c.cl_code
+	</select>
+	
+	<select id="selectPaymentResultList" parameterType="hashMap" resultType="payment">
+		SELECT
+		    a.*,
+			c.cl_name charge_wh_name	    
+		FROM
+		    (SELECT
+		        i.wh_code,
+		        p.pay_no,
+		        p.pay_ymd,
+		        p.content,
+		        p.pay_chg,
+		        p.sts_code
+		    FROM
+		        payment p, in_order i
+		    WHERE
+		        p.pay_no = i.pay_no
+		        and p.sts_code = 'PY002'
+		        and i.co_code = #{co_code}
+		    ORDER BY p.pay_no DESC) a, client c
+		WHERE
+		    a.wh_code = c.cl_code
+	</select>
+
+	<select id="selectPaymentResultListRowCnt" parameterType="hashMap" resultType="int">
+		SELECT
+		   	COUNT(*)
+		FROM
+		    (SELECT
+		        i.wh_code,
+		        p.pay_no,
+		        p.pay_ymd,
+		        p.content,
+		        p.pay_chg,
+		        p.sts_code
+		    FROM
+		        payment p, in_order i
+		    WHERE
+		        p.pay_no = i.pay_no
+		        and p.sts_code = 'PY002'
+		        and i.co_code = #{co_code}
+		    ORDER BY p.pay_no DESC) a, client c
+		WHERE
+		    a.wh_code = c.cl_code
+	</select>
+	
+	<select id="selectContractWH" parameterType="hashMap" resultType="client">
+		SELECT
+		    cl_code, cl_name
+		FROM
+		    client
+		WHERE
+		    cl_code IN (SELECT co_code FROM c2c_contract WHERE sts_code = 'CR002' and co_code = #{co_code})
+		    and (cl_code LIKE '%'||#{searchData}||'%' or cl_name LIKE '%'||#{searchData}||'%')
+	</select>
+	
+	<select id="selectPaymentConfirmFormData" parameterType="hashMap" resultType="payment">
+		SELECT
+		    a.*, c.mnth_chrg, client.cl_name wh_name
+		FROM
+		    (SELECT
+			    co_code, wh_code, ord_no, in_ymd, in_chrg,
+			    (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name,
+			    (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item WHERE ord_no = in_order.ord_no) AND co_code = in_order.co_code) item_name,
+			    (SELECT COUNT(*) FROM order_item WHERE in_order.ord_no = ord_no) item_qty,
+			    (SELECT SUM(in_qty) FROM order_item WHERE in_order.ord_no = ord_no) in_qty
+		    FROM
+		    	in_order
+		    WHERE 
+			    sts_code = 'PR004'
+			    and pay_no = #{pay_no}
+			    and co_code = #{co_code}
+			    ORDER BY ord_no DESC) a, c2c_contract c, client
+		WHERE
+		    c.co_code = a.co_code
+		    and c.wh_code = a.wh_code
+		    and client.cl_code = a.wh_code
+	</select>
+	
+	<update id="updatePaymentSTS" parameterType="payment">
+		UPDATE payment
+		SET
+		    sts_code = 'PY002'
+		WHERE
+		    pay_no = #{pay_no}
+	</update>
+	
+	<!-- D -->
+	
+	
+	
+</mapper>

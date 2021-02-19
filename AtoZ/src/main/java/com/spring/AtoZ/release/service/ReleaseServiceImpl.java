@@ -1,0 +1,139 @@
+package com.spring.AtoZ.release.service;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.spring.AtoZ.common.dto.PageMaker;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.release.dao.ReleaseDAO;
+import com.spring.AtoZ.release.dto.ApproveRelease;
+import com.spring.AtoZ.release.dto.CompleteReleaseDetailCommand;
+import com.spring.AtoZ.release.dto.CompleteReleaseListCommand;
+import com.spring.AtoZ.release.dto.ExpectedRelease;
+import com.spring.AtoZ.release.dto.InventoryList;
+import com.spring.AtoZ.release.dto.RejectRelease;
+import com.spring.AtoZ.vo.ClientVO;
+import com.spring.AtoZ.vo.EmployeeVO;
+import com.spring.AtoZ.vo.ReleaseVO;
+import com.spring.AtoZ.vo.RlsItemVO;
+
+public class ReleaseServiceImpl implements ReleaseService {
+	private ReleaseDAO releaseDAO;
+	public void setReleaseDAO(ReleaseDAO releaseDAO) {
+		this.releaseDAO = releaseDAO;
+	}
+	@Override
+	public Map<String, Object> getReleaseExpectedList(SearchMap sm) throws SQLException {
+		List<ExpectedRelease> list = releaseDAO.selectSearchReleaseExpectedList(sm);
+
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(releaseDAO.selectSearchReleaseExpectedCount(sm));
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("expectedList", list);
+		dataMap.put("pageMaker", pageMaker);
+		
+		return dataMap;
+	}
+	@Override
+	public Map<String, Object> getReleaseRequest(int rls_no) throws SQLException {
+		Map<String, Object> rls_nos = new HashMap<String, Object>();
+		rls_nos.put("rls_no", rls_no);
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("dataList", releaseDAO.selectReleaseRequest(rls_nos));
+		return result;
+	}
+	
+	@Override
+	public Map<String, Object> getEmployeeList(SearchMap sm) throws SQLException {
+		List<EmployeeVO> list2 = releaseDAO.selectEmployeeList(sm);
+		
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(releaseDAO.selectEmployeeListCount(sm));
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("dataList", list2);
+		dataMap.put("pageMaker", pageMaker);
+		return dataMap;
+	}
+
+	@Override
+	public void arroveRequestRelease(ApproveRelease approve) throws SQLException {
+		releaseDAO.releaseRequestApprove(approve);
+		
+	}
+	
+	@Override
+	public void rejectRequestRelease(RejectRelease reject) throws SQLException {
+		releaseDAO.releaseRequestReject(reject);
+		
+	}
+
+	@Override
+	public List<ClientVO> getContractWH_List(Map<String, Object> map) throws SQLException {
+		List<ClientVO> whList = releaseDAO.selectWareList(map);
+		return whList;
+	}
+	@Override
+	public Map<String, Object> getReleaseList(SearchMap sm) throws SQLException {
+		List<CompleteReleaseListCommand> releaselist = releaseDAO.selectCompleteReleaseList(sm);
+		
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(releaseDAO.selectCompleteReleaseListCount(sm));
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("releaselist", releaselist);
+		dataMap.put("pageMaker", pageMaker);
+		return dataMap;
+	}
+	@Override
+	public List<CompleteReleaseDetailCommand> getCompleteReleaseDetail(int rls_no) throws SQLException {
+		List<CompleteReleaseDetailCommand> releaseDetailList = releaseDAO.selectCompleteReleaseDetail(rls_no);
+		return releaseDetailList;
+	}
+	@Override
+	public List<InventoryList> getReleaseItemList(Map<String, Object> map) throws SQLException {
+		List<InventoryList> getReleaseItemList = releaseDAO.searchReleaseItemList(map);
+		return getReleaseItemList;
+	}
+	@Override
+	public void registRelease(Map<String, Object> map) throws SQLException {
+		int rls_no = releaseDAO.rlsSeq();
+		String wh_code = (String) map.get("wh_code");
+		String co_code = (String) map.get("co_code");
+		String dst_code = (String) map.get("co_code");
+		String dst_addr = (String) map.get("dst_addr");
+		String reg_name = (String) map.get("cl_ceo");
+		String plan_ymd = (String) map.get("plan_ymd");
+		
+		ReleaseVO release = new ReleaseVO();
+		
+		release.setRls_no(rls_no);
+		release.setCo_code(co_code);
+		release.setWh_code(wh_code);
+		release.setDst_addr(dst_addr);
+		release.setDst_code(dst_code);
+		release.setPlan_ymd(plan_ymd);
+		
+		releaseDAO.insertRlease(release);
+		
+		RlsItemVO[] rlsItemArray = (RlsItemVO[]) map.get("rlsItem");
+		for(RlsItemVO rls : rlsItemArray) {
+			rls.setRls_no(rls_no);
+			rls.setCo_code(co_code);
+			rls.setReg_name(reg_name);
+			releaseDAO.insertRlsItem(rls);
+		}
+		
+		
+	}
+	@Override
+	public void removeRelese(int rls_no) throws SQLException {
+		releaseDAO.deleteRelease(rls_no);
+		
+	}
+}

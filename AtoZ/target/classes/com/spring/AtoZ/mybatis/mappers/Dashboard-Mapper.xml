@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Dashboard-Mapper">
+
+	<!-- 민규 0107 대시보드 위젯 넘버 -->
+	<select id="selectQnaCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM qna
+		WHERE WRT_YMD = TO_CHAR(sysdate, 'yyyymmdd')	
+	</select>
+	
+	<select id="selectContractReqCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM CLIENT
+		WHERE CRE_YMD = TO_CHAR(sysdate, 'yyyymmdd') AND sts_code = 'CR001'
+	</select>
+	
+	<select id="selectContractExpCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM CONTRACT
+		WHERE EXP_YMD = TO_CHAR(sysdate, 'yyyymmdd') AND sts_code = 'CR003'
+	</select>
+	
+	<select id="selectPaymentHisCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM pay_his
+		WHERE PAY_YMD = TO_CHAR(sysdate, 'yyyymmdd') AND sts_code = 'PY003'
+	</select>
+		
+	<!-- 민규 0108 대시보드 리스트 -->
+	<select id="selectToDayQnaList" resultType="com.spring.AtoZ.dashboard.dto.ListCommand">
+		SELECT client.cl_name, qna.title, qna.content, qna.wrt_ymd
+		FROM qna, client
+		WHERE qna.WRT_YMD = TO_CHAR(sysdate, 'yyyymmdd') AND qna.CL_CODE = client.CL_CODE
+	</select>
+	
+	<select id="selectContractReqClientList" resultType="com.spring.AtoZ.vo.ClientVO">
+		select id, cl_name, cl_ceo
+		from client
+		where cre_ymd = TO_CHAR(sysdate, 'yyyymmdd') AND sts_code = 'CR001'
+	</select>
+	
+	<select id="selectContractExpClientList" resultType="com.spring.AtoZ.vo.ClientVO">
+		select client.id, client.cl_name, client.cl_ceo
+		from contract, client
+		where contract.cl_code = client.cl_code and contract.exp_ymd = TO_CHAR(sysdate, 'yyyymmdd')
+	</select>
+	
+	<select id="selectToDayPayList" resultType="com.spring.AtoZ.dashboard.dto.ListCommand">
+		select client.cl_name, pay_his.pay_amt
+		from pay_his, payment, client
+		where pay_his.pay_ymd = TO_CHAR(sysdate, 'yyyymmdd') and pay_his.pay_no = payment.pay_no and payment.co_code = client.cl_code
+	</select>
+
+	<!-- 금일 입고 예정 건수 -->
+	<select id="selectCountinOrderByToday" resultType="int">
+		select count(*) from in_order
+		where co_code = #{cl_code} and deli_ymd = TO_CHAR(sysdate,'YYYYMMDD') and sts_code = 'PR002'
+	</select>
+	
+	<!-- 금일 출고 예정 건수 -->
+	<select id="selectCountreleaseByToday" parameterType="str" resultType="int">
+		select count(*) from release 
+		where co_code = #{cl_code} and plan_ymd = TO_CHAR(sysdate,'YYYYMMDD')
+	</select>
+
+	<!-- 계약중인 물류센터 수 -->
+	<select id="selectCountc2cContract" resultType="int" parameterType="str">
+		select count(*) from c2c_contract
+		where co_code = #{cl_code} and sts_code = 'CR002'
+	</select>
+	
+	<!-- 아직 읽지 않은 쪽지 수 -->
+	<select id="selectCountmsgByreadYn" parameterType="str" resultType="int">
+		select count(*) from msg 
+		where RC_CODE = (select cl_code from client where cl_code = #{cl_code})
+		and read_yn=0
+	</select>
+
+	<!-- 입고 예정 목록 -->
+	<select id="selectReceiveListByToday" resultType="com.spring.AtoZ.dashboard.dto.OrderCommand">
+		select (select cl_name from client where wh_code=cl_code) cl_name, wh_mngr, ord_mngr, req_ymd, deli_ymd from in_order 
+		where co_code = 'CO1000' and sts_code = 'PR002' and deli_ymd = to_char(sysdate,'YYYYMMDD')
+	</select>
+
+	<!-- 출고 예정 목록 -->
+	<select id="selectReleaseListByToday" parameterType="str" resultType="com.spring.AtoZ.dashboard.dto.ReleaseCommand">
+		select (select cl_name from client where client.cl_code=release.wh_code) cl_name, 
+				(select cl_name from client where client.cl_code = release.dst_code) dst_name, 
+				(select emp_name from wh_emp where release.emp_id = wh_emp.emp_id) emp_name, 
+				plan_ymd 
+		from release
+		where co_code= #{cl_code} and plan_ymd = TO_CHAR(sysdate,'YYYYMMDD')
+	</select>
+	
+	<!-- 입고 스케줄 -->
+	<select id="selectOrderSchedule" resultType="com.spring.AtoZ.dashboard.dto.OrderScheduleCommand">
+		SELECT ord_no, deli_ymd, 
+        	(SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item WHERE ord_no = in_order.ord_no) AND co_code =#{cl_code} ) item_name
+		FROM in_order
+		WHERE co_code = #{cl_code}
+	</select>
+	
+	
+	<!-- 출고 스케줄 -->
+	<select id="selectReleaseSchedule" parameterType="str" resultType="com.spring.AtoZ.dashboard.dto.ReleaseScheduleCommand">
+		select (select cl_name from client where wh_code=cl_code) cl_name, 
+		        (select cl_name from client where client.cl_code = release.dst_code) dst_name,
+		        plan_ymd
+		from release 
+		where co_code=#{cl_code}
+	</select>
+	
+	<!-- 물류센터 대시보드용 -->
+	<!-- 출고 승인 요청 건수 -->
+	<select id="selectRlsReqNum" resultType="int">
+		SELECT count(rls_no) FROM release WHERE sts_code = 'PR001' and wh_code = #{wh_code}
+	</select>
+	<!-- 입고 승인 요청 건수 -->
+	<select id="selectInReqNum" resultType="int">
+		SELECT count(ord_no) FROM in_order WHERE sts_code = 'PR001' and wh_code = #{wh_code}
+	</select>
+	<!-- 금일 입고 예정 건수 -->
+	<select id="selectInPlanNum" resultType="int">
+		SELECT count(ord_no) FROM in_order WHERE sts_code = 'PR002' and deli_ymd = TO_CHAR(SYSDATE,'YYYYMMDD') and wh_code = #{wh_code}
+	</select>
+	<!-- 금일 출고 예정 건수 -->
+	<select id="selectOutPlanNum" resultType="int">
+		SELECT count(rls_no) FROM release WHERE sts_code = 'PR005' and plan_ymd = TO_CHAR(SYSDATE,'YYYYMMDD') and wh_code = #{wh_code}
+	</select>
+	<select id="selectCtrReqNum" resultType="int">
+		SELECT count(cc_no) FROM c2c_contract WHERE wh_code = #{wh_code} and sts_code = 'CR001'
+	</select>
+	<!-- 금일 입고 예정 목록 -->
+	<select id="selectTodayInPlan" resultType="widgetCmd">
+		SELECT rownum, item_no, item_name, std_name, qty AS plan_qty, cl_name
+		FROM(
+			SELECT oi.item_no, item_name, std_name, qty, cl_name
+			FROM in_order io, item it, order_item oi, client cl, standard st
+			WHERE io.wh_code = #{wh_code} 
+				and io.sts_code = 'PR002' 
+				and deli_ymd = TO_CHAR(sysdate,'YYYYMMDD') 
+				and oi.item_no = it.item_no 
+				and io.ord_no = oi.ord_no 
+				and oi.co_code = cl.cl_code 
+				and it.std_no = st.std_no
+			ORDER BY item_name)
+	</select>
+	<!-- 금일 출고 예정 목록-->
+	<select id="selectTodayOutPlan" resultType="widgetCmd">
+		SELECT rownum, item_no, item_name, std_name, plan_qty, cl_name
+		FROM(
+			SELECT ri.item_no, item_name, std_name, plan_qty, cl_name
+			FROM release rl, rls_item ri, item it, standard st, client cl
+			WHERE rl.rls_no = ri.rls_no 
+				and rl.sts_code = 'PR005' 
+				and plan_ymd = TO_CHAR(sysdate,'YYYYMMDD') 
+				and rl.wh_code = #{wh_code}
+				and ri.item_no = it.item_no 
+				and it.std_no = st.std_no 
+				and rl.co_code = cl.cl_code
+			ORDER BY item_name)
+	</select>
+	<!-- 입고 승인 요청 목록 -->
+	<select id="selectInReqList" resultType="widgetCmd">
+		SELECT item_no, std_name, item_name, plan_qty, cl_name, plan_ymd, req_ymd, rownum
+		FROM(
+			SELECT it.item_no, std_name, item_name, qty AS plan_qty, cl_name, deli_ymd AS plan_ymd, io.req_ymd
+			FROM in_order io, order_item oi, client cl, item it, standard st
+			WHERE io.sts_code = 'PR001' 
+				and io.wh_code = #{wh_code} 
+				and io.ord_no =oi.ord_no
+				and oi.item_no = it.item_no 
+				and io.co_code = cl.cl_code 
+				and it.std_no = st.std_no)
+	</select>
+	<!-- 출고 승인 요청 목록 -->
+	<select id="selectOutReqList" resultType="widgetCmd">
+		SELECT item_no, std_name, item_name, plan_qty, cl_name, plan_ymd, req_ymd, rownum
+		FROM(
+			SELECT it.item_no, std_name, item_name, plan_qty, cl_name, plan_ymd, ri.reg_ymd req_ymd
+			FROM release rl, rls_item ri, client cl, item it, standard st
+			WHERE rl.sts_code = 'PR001' 
+				and wh_code = #{wh_code} 
+				and rl.rls_no = ri.rls_no 
+				and ri.item_no = it.item_no 
+				and rl.co_code = cl.cl_code 
+				and it.std_no = st.std_no) 
+	</select>
+
+</mapper>

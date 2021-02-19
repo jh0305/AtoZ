@@ -1,0 +1,204 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<style>
+	.trEvent{
+		cursor: pointer;
+	}
+	.trEvent:hover{
+		background : rgb(241,244,249);
+	}
+</style>
+
+<style>
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+  top: -5px;
+  right: 105%;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+
+		<div class="col-12 card-body" style="padding: 0px 8px;">
+			<div class="row">
+				<div class="col-12">
+					<div class="row" style="padding: 0px 5px;">
+						<div class="col-12" style="padding: 0px 0px;">
+							<div class="row" style="margin: 0px 0px 5px 0px;">
+								<div style="display:inline-block; height: 36px; padding: 0px 10px 0px 0px;" class="col-11">
+									<div class="col-12">
+										<input id="searchInput" type="text" class="form-control" placeholder="품목코드 또는 품목명을 입력하세요" style="border-radius: 3px;">
+									</div>
+								</div>
+								<div style="display:inline-block; height: 34px; padding: 0px 0px;" class="col-1">
+									<div class="col-12 text-center">
+										<div onclick="goItemSearch()" style="border: 1px solid #D1D4D7; border-radius:3px; background-color:#F3F6FA; cursor: pointer;">
+											<svg style="margin: 7px 0px;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+											<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+											<circle cx="10" cy="10" r="7"></circle>
+											<line x1="21" y1="21" x2="15" y2="15"></line></svg>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-12 table-responsive" style="padding: 5px; margin: 0px;">
+					<table class="table card-table table-vcenter text-nowrap datatable" border=1>
+						<thead style="display: block;">
+							<tr class="text-center">
+								<th class="col-md-2">품목코드</th>
+								<th class="col-md-2">품목이름</th>
+								<th class="col-md-2">거래처코드</th>
+								<th class="col-md-2">거래처이름</th>
+								<th class="col-md-2">규격</th>
+							</tr>
+						</thead>
+						<tbody id="item_tbody" style=" display: block; height: 591px; overflow: auto; ">
+						
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		<!-- card-body -->
+		
+		<script>
+			var tbody;
+			var td;
+			var tr;
+			var btnSearch;
+			var btnSearchCnt
+			var noBtnSearchCnt
+			
+			function goFindElement(th){
+				
+				// 내가 클릭한 btn 을 찾는다.
+				btnSearch = $(th).parent();
+				
+				// 내가 클릭한 행(tr) 열(td) 을 찾는다.
+				tr = $(th).parents('tr');
+				td = tr.children();
+				
+				//데이터를 추가하지 않은(돋보기 상태의) 행(tr)의 갯수는 몇개 인가?
+				tbody = $(th).parents('tbody');
+				btnSearchCnt = 	tbody.children().length;
+				
+				//내가 클릭한 행을 제외한, 돋보기 행 갯수는?
+				noBtnSearchCnt = tbody.children('.item_true').length;		
+						
+				btnSearchCnt = btnSearchCnt - noBtnSearchCnt -1;
+				//console.log("btnSearchCnt : " + btnSearchCnt);
+			}
+		
+			function goItemSearch(){
+				
+				var searchInputValue = $('#searchInput').val();
+				
+				$.ajax({
+		    		url : '<%=request.getContextPath()%>/CO/order/getSearchItem',
+					type : 'post',
+					data : {
+						inputValue : searchInputValue
+					},
+					success : function(res) {
+						$("#item_tbody").empty();
+						//console.log("ok");
+						//console.log(res)
+						mycode = "";
+						$.each(res, function(i) {
+							mycode += '<tr class="itemListCode trEvent text-center">';
+							mycode += '	<td id="item_no" class="col-md-2">' + res[i].item_no + '</td>';
+							var tooltip_code;
+							if(res[i].item_name.length > 9){
+								var item_name = res[i].item_name;
+								res[i].item_name = res[i].item_name.substr(0,9) + "\267\267\267";
+								tooltip_code = 'title="'+item_name+'"';
+							}else{
+								tooltip_code = '';
+							}
+							mycode += '	<td id="item_name" class="col-md-2" '+tooltip_code+'>' + res[i].item_name + '</td>';
+							mycode += '	<td id="cp_code" class="col-md-2">' + res[i].cp_code + '</td>';
+							mycode += '	<td id="cp_name" class="col-md-2">' + res[i].cp_name + '</td>';
+							mycode += '	<td id="std_name" class="col-md-2">' + res[i].std_name + '</td>';
+							mycode += '</tr>';
+						});
+						//console.log(mycode)
+						$("#item_tbody").append(mycode);
+					},
+					error : function(req) {
+						alert("상태 : " + req.status);
+					}
+				});
+			};
+			var cnt = 0;
+			$("body").on("click", ".itemListCode", function() {
+								
+				closeDial($('#itemSearchDialog'));
+
+				var item_no = $(this).find("#item_no").text();
+				var item_name = $(this).find("#item_name").text();
+				var cp_code = $(this).find("#cp_code").text();
+				var cp_name = $(this).find("#cp_name").text();
+				var std_name = $(this).find("#std_name").text();
+				
+				btnSearch.remove();
+				
+				// 클릭한 tr 의 td에 각각 데이터를 입력한다.
+				tr.removeClass('item_false');
+				tr.addClass('item_true');
+				td.eq(1).text(item_no);
+				td.eq(2).text(item_name);
+				td.eq(3).text(cp_code);
+				td.eq(4).text(cp_name);
+				td.eq(5).text(std_name);
+				
+				// 돋보기 행 남은 수 가 0이 아니면 리턴
+				if(btnSearchCnt != 0){return;}
+				// <input type="text" name="orderItemList['+ cnt +'].item_no" value="'+item_no+'"> name="orderItemList['+ cnt +'].qty"
+				
+				$(openItemSearch_tbody).append($(
+		    			'<tr class="item-tr item_false">'
+		    				+ '<td ><svg class="icon_Minus myIcon" style="color: #dedede; cursor: pointer;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="5" y1="12" x2="19" y2="12" /></svg></td>'
+		    				+ '<td name="item_code" class="item-code text-center">' + mySvg + '</td>'
+		    				+ '<td name="item_name" class="item-name text-center"></td>'
+		    				+ '<td name="cprt_code" class="cprt-code text-center"></td>'
+		    				+ '<td name="cprt_name" class="cprt-name text-center"></td>'
+		    				+ '<td name="item_std" class="item-std text-center"></td>'
+		    				+ '<td name="item_ea" class="item-ea text-center"><input value="0" style="padding: 3px 0px; text-align:center; margin:auto; width:50%;" maxlength=3 type="text" class="item_ea_value form-control"/></td>'
+		   				+ "</tr>"
+				));
+				
+				cnt++;
+			});
+			
+		</script>		
+		
+<script>
+// 	function goTooltip(item_name){
+// 		//console.log(item_name);
+// 		//$("td[title='"+item_name+"']").tooltip();
+// 	}
+</script>

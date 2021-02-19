@@ -1,0 +1,235 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<style>
+	.clickabletr:hover{
+		background-color:#f6f4fa;
+	}
+	.clickabletr{
+		cursor: pointer;
+	}
+	tr{
+		text-align:center;
+	}
+	.col-4{
+		margin-top:0%;
+	}
+	.col-2{
+		line-height:3;
+		padding-left:20px;
+	}
+</style>
+<c:set var="searchMap" value="${pageMaker.searchMap }"/>
+<div style="padding: 0px 15px;">
+	<div>
+		<strong style="font-size:1.2rem;">품목목록</strong>
+	</div>
+	<div class="card col-12" style="margin-top:1%; height: 835px;">
+		<div class="card-header">
+			<select class="form-select" id="searchType" style="display:inline-block; width:15%; display:inline;">
+				<option value="" ${searchMap.get('searchType') eq '' ? 'selected' : '' }>검색구분</option>
+				<option value="item_name" ${searchMap.get('searchType') eq 'item_name' ? 'selected' : '' }>품목명</option>
+				<option value="std_name" ${searchMap.get('searchType') eq 'std_name' ? 'selected' : '' }>규격명</option>
+				<option value="cp_name" ${searchMap.get('searchType') eq 'cp_name' ? 'selected' : '' }>거래처명</option>
+			</select>
+			<input type="text" class="form-control" id="keyword" value="${searchMap.get('keyword') }" placeholder="Search for..." style="width:30%; display:inline;">
+			<button class="btn btn-white btn-icon" aria-label="Button" style="display:inline;" onclick="search_go()">
+				<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+					<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+					<circle cx="10" cy="10" r="7"></circle>
+					<line x1="21" y1="21" x2="15" y2="15"></line>
+				</svg>
+			</button>
+		</div>
+		<div class="card-body">
+			<div class="table-responsive">
+				<table class="table card-table table-vcenter text-nowrap datatable">
+					<thead>
+						<tr>
+							<th class="text-center" style="width:300px;">품목명</th>
+							<th class="text-center">규격명</th>
+							<th class="text-center">품목구분</th>
+							<th class="text-center">품목취급유형</th>
+							<th class="text-center">품목카테고리</th>
+							<th class="text-center">거래처명</th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:choose>
+							<c:when test="${empty itemlist }">
+								<tr>
+									<td colspan="7" style="text-align:center">등록된 물품이 없습니다.</td>
+								</tr>	
+							</c:when>
+							<c:otherwise>
+								<c:forEach var="item" items="${itemlist }" varStatus="status">
+									<tr class="clickabletr" onclick="itemDetail('${item.item_no}')">
+										<td style="text-align:left; overflow:hidden; text-overflow:ellipsis; white-space: nowrap;">${item.item_name }</td>
+										<td>${item.std_name }</td>
+										<td>
+											<c:choose>
+												<c:when test="${item.gb_code eq 'GB001'}">
+													원재료
+												</c:when>
+												<c:when test="${item.gb_code eq 'GB002'}">
+													부재료
+												</c:when>
+												<c:when test="${item.gb_code eq 'GB003'}">
+													제품
+												</c:when>
+												<c:when test="${item.gb_code eq 'GB004'}">
+													반제품
+												</c:when>
+												<c:when test="${item.gb_code eq 'GB005'}">
+													상품
+												</c:when>
+											</c:choose>
+										</td>
+										<td>
+											<c:choose>
+												<c:when test="${item.gr_code eq 'GR001'}">
+													의류
+												</c:when>
+												<c:when test="${item.gr_code eq 'GR002'}">
+													전자제품
+												</c:when>
+												<c:when test="${item.gr_code eq 'GR003'}">
+													식품
+												</c:when>
+												<c:when test="${item.gr_code eq 'GR004'}">
+													의약품
+												</c:when>
+												<c:when test="${item.gr_code eq 'GR005'}">
+													생활용품
+												</c:when>
+												<c:when test="${item.gr_code eq 'GR006'}">
+													가구
+												</c:when>
+												<c:when test="${item.gr_code eq 'GR007'}">
+													문구류
+												</c:when>
+												<c:when test="${item.gr_code eq 'GR008'}">
+													화장품
+												</c:when>
+											</c:choose>
+										</td>
+										<td>
+											<c:choose>
+												<c:when test="${item.type_code eq 'WT001' }">
+													실온
+												</c:when>
+												<c:when test="${item.type_code eq 'WT002' }">
+													저온
+												</c:when>
+												<c:when test="${item.type_code eq 'WT003' }">
+													냉장
+												</c:when>
+												<c:when test="${item.type_code eq 'WT004' }">
+													냉동
+												</c:when>
+												<c:when test="${item.type_code eq 'WT005' }">
+													위험물
+												</c:when>
+											</c:choose>
+										</td>
+										<td>${item.cp_name }</td>
+									</tr>
+								</c:forEach>
+							</c:otherwise>
+						</c:choose>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="card-footer" style="background-color:white;">
+			<div style="float:left;">
+				<%@ include file="/WEB-INF/views/common/pagination.jsp" %>
+			</div>
+			<div style="display:inline-block; width:170px; float:right;">
+				<input type="button" class="btn btn-white" value="등록" style="margin-right:3%; display:inline-block;" onclick="itemRegistForm();"/>
+				<input type="button" class="btn btn-white" value="Excel등록" style="display:inline-block;" onclick="openDial($('#dialog8'),500,300);">
+			</div>
+		</div>
+	</div>
+</div>
+<div id="dialog1" class="dialogDiv" title="품목등록">
+	<%@ include file="itemRegist.jsp" %>
+</div>
+<div id="dialog2" class="dialogDiv" title="품목수정">
+	<%@ include file="itemModify.jsp" %>
+</div>
+<div id="dialog3" class="dialogDiv" title="품목규격 목록">
+	<%@ include file="standardList.jsp" %>
+</div>
+<div id="dialog4" class="dialogDiv" title="규격등록">
+	<%@ include file="standardRegist.jsp" %>
+</div>
+<div id="dialog5" class="dialogDiv" title="규격상세">
+	<%@ include file="standardDetail.jsp" %>
+</div>
+<div id="dialog6" class="dialogDiv" title="규격수정">
+	<%@ include file="standardModify.jsp" %>
+</div>
+<div id="dialog7" class="dialogDiv" title="거래처목록">
+	<%@ include file="cooperatorList.jsp"  %>
+</div>
+<div id="dialog8" class="dialogDiv" title="엑셀 품목 등록">
+	<%@ include file="excelInsert.jsp" %>
+</div>
+<div id="dialog9" class="dialogDiv" title="엑셀 규격 등록">
+	<%@ include file="excelInsert2.jsp" %>
+</div>
+<%@ include file="/WEB-INF/views/common/popupDial_js.jsp" %>
+<script>
+function itemRegistForm() {
+	$('#Istd_name').val("");
+	$('#Icp_name').val("");
+	openDial($('#dialog1'),1000,700);
+}
+function search_go(){
+	var data = {
+			searchType : $("#searchType").val(),
+			keyword : $("#keyword").val()
+	}
+	searchList_go(1,'${searchMap.url}',data);
+}
+
+function itemDetail(item_no) {
+	$.ajax({
+		url : '<%=request.getContextPath()%>/CO/item/itemDetail?item_no='+item_no,
+		type : 'get',
+		success : function(res) {
+			$('#item_name').val(res.item_name);
+			$('#std_name').val(res.std_name);
+			$('#cp_name').val(res.cp_name);
+			$('#item_wgt').val(res.item_wgt);
+			$('#item_no').val(res.item_no);
+			$('input[name="gb_code2"]').prop("checked",false);
+			$('input[name="gr_code2"]').prop("checked",false);
+			$('input[name="type_code2"]').prop("checked",false);
+			var gb_codes = $('input[name="gb_code2"]');
+			var gr_codes = $('input[name="gr_code2"]');
+			var type_codes = $('input[name="type_code2"]');
+			for(var i=0; i < gb_codes.length ; i++){
+				gb_codes[i].value="GB00"+(i+1);
+				if(res.gb_code == gb_codes[i].value){
+					gb_codes[i].checked=true;
+				}
+			}
+			for(var i=0; i < gr_codes.length; i++) {
+				gr_codes[i].value="GR00"+(i+1);
+				if(res.gr_code == gr_codes[i].value){
+					gr_codes[i].checked=true;
+				}
+			}
+			for(var i=0; i < type_codes.length; i++) {
+				type_codes[i].value="WT00"+(i+1);
+				if(res.type_code == type_codes[i].value){
+					type_codes[i].checked=true;
+				}
+			}
+			openDial($('#dialog2'),1000,700)
+		}
+	})
+}
+</script>

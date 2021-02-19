@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Message-Mapper">
+	
+	<sql id="search">
+		<if test="searchType == 'content'.toString()">
+			and content like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	
+	<select id="selectSendMessageListByClCode" resultType="com.spring.AtoZ.message.dto.MessageCommand">
+		select msg.*, (select cl_name from client where cl_code=rc_code) rc_name from msg where sd_code=#{cl_code} and SD_DEL_GB=0 <include refid="search"/> order by wrt_ymd desc, read_yn asc
+	</select>
+		
+	<select id="selectSendMessageListCountByClCode" resultType="int">
+		select count(*) from msg where sd_code=#{cl_code} and SD_DEL_GB=0 <include refid="search"/>
+	</select>	
+	
+	<select id="selectReceiveMessageListByClCode" resultType="com.spring.AtoZ.message.dto.MessageCommand">
+		select msg.*, (select cl_name from client where cl_code=sd_code) sd_name from msg where rc_code=#{cl_code} and RC_DEL_GB=0 <include refid="search"/> order by wrt_ymd desc
+	</select>
+	
+	<select id="selectReceiveMessageListCountByClCode" resultType="int">
+		select count(*) from msg where rc_code=#{cl_code} and RC_DEL_GB=0 <include refid="search"/>
+	</select>
+
+	<select id="selectSendMessageDetail" parameterType="com.spring.AtoZ.message.dto.MessageDetailCommand" resultType="com.spring.AtoZ.message.dto.MessageCommand">
+		select msg.*, (select cl_name from client where cl_code=rc_code) rc_name from msg where sd_code=#{cl_code} and SD_DEL_GB=0 and msg_no=#{msg_no}
+	</select>
+	
+	<select id="selectReceiveMessageDetail" parameterType="com.spring.AtoZ.message.dto.MessageDetailCommand" resultType="com.spring.AtoZ.message.dto.MessageCommand">
+		select msg.*, (select cl_name from client where cl_code=sd_code) sd_name from msg where rc_code=#{cl_code} and RC_DEL_GB=0 and msg_no=#{msg_no}
+	</select>
+	
+	<update id="updateReadYn">
+		update msg set read_yn=1 where msg_no=#{msg_no}
+	</update>
+	
+	<select id="selectClientNameByClRegno" parameterType="str" resultType="str">
+		select cl_name from client where cl_regno = #{cl_regno}
+	</select>
+	
+	<update id="insertMessage" parameterType="com.spring.AtoZ.message.dto.SendMessageCommand">
+		insert into msg values(#{msg_no},#{sd_code},#{rc_code},#{content},TO_CHAR(sysdate,'YYYYMMDD'),0,0,0)
+	</update>
+	
+	<select id="selectMsgSequenceNextValue" resultType="int">
+		select msg_seq.nextVal from dual
+	</select>
+	
+	<select id="selectClientCodeByClRegno" parameterType="str" resultType="str">
+		select cl_code from client where cl_regno = #{cl_regno}
+	</select>
+	
+	<update id="updateRcDelGB" parameterType="int">
+		update msg set rc_del_gb = 1 where msg_no=#{msg_no}
+	</update>
+	
+	<update id="updateSdDelGB" parameterType="int">
+		update msg set sd_del_gb = 1 where msg_no=#{msg_no}
+	</update>
+</mapper>

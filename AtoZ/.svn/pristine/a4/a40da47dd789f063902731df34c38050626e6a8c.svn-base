@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- excel upload -->
+	<bean id="excelUploadPath" class="java.lang.String">
+		<constructor-arg value="${item.excel.upload}"/>
+	</bean>
+
+	<!-- file upload -->
+	<bean id="fileUploadPath" class="java.lang.String">
+		<constructor-arg value="${notice.upload}"/>
+	</bean>
+	
+	<!-- whpicture upload -->
+	<bean id="whpictureUploadPath" class="java.lang.String">
+		<constructor-arg value="${warehouse.img.upload}"></constructor-arg>
+	</bean>
+	
+	<!-- Picking -->
+	<bean id="pickingDAO"
+		  class="com.spring.AtoZ.picking.dao.PickingDAOImpl"
+		  p:sqlSession-ref="sqlSession"
+		  />
+	<bean id="pickingService"
+		  class="com.spring.AtoZ.picking.service.PickingServiceImpl"
+		  p:pickingDAO-ref="pickingDAO"
+		  p:constructDAO-ref="constructDAO"	
+		  />
+		  
+	<!-- Attendance -->
+	<bean id="attendanceDAO"
+		  class="com.spring.AtoZ.attendance.dao.AttendanceDAOImpl"
+		  p:sqlSession-ref="sqlSession"
+		  />
+	<bean id="attendanceService"
+		  class="com.spring.AtoZ.attendance.service.AttendanceServiceImpl"
+		  p:attendanceDAO-ref="attendanceDAO"	
+		  />
+	
+	<!-- ServiceUse -->
+	<bean id="serviceUseDAO"
+		class="com.spring.AtoZ.serviceUse.dao.ServiceUseDAOImpl"
+		p:sqlSession-ref="sqlSession"
+	/>
+	<bean id="serviceUseService"
+		class="com.spring.AtoZ.serviceUse.service.ServiceUseServiceImpl"
+		p:serviceUseDAO-ref="serviceUseDAO"/>
+		  
+	<!-- Branch -->		  		
+	<bean id="branchDAO"
+		  class="com.spring.AtoZ.branch.dao.BranchDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="branchService"
+		  class="com.spring.AtoZ.branch.service.BranchServiceImpl"
+		  p:branchDAO-ref="branchDAO"/>	  
+	
+	<!-- Charge -->
+	<bean id="chargeDAO"
+		  class="com.spring.AtoZ.charge.dao.ChargeDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="chargeService"
+		  class="com.spring.AtoZ.charge.service.ChargeServiceImpl"
+		  p:chargeDAO-ref="chargeDAO"/>	
+	
+	<!-- common -->
+	<bean id="commonDAO"
+		  class="com.spring.AtoZ.common.dao.CommonDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="commonService"
+		  class="com.spring.AtoZ.common.service.CommonServiceImpl"
+		  p:commonDAO-ref="commonDAO"/>
+		  
+	<!-- commoncode -->
+	<bean id="commoncodeDAO"
+		  class="com.spring.AtoZ.commoncode.dao.CommonCodeDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="commoncodeService"
+		  class="com.spring.AtoZ.commoncode.service.CommonCodeServiceImpl"
+		  p:commonCodeDAO-ref="commoncodeDAO"/>
+	
+	<!-- construct -->
+	<bean id="constructDAO"
+		  class="com.spring.AtoZ.construct.dao.ConstructDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="constructService"
+		  class="com.spring.AtoZ.construct.service.ConstructServiceImpl"
+		  p:constructDAO-ref="constructDAO"
+		  p:strategyDAO-ref="strategyDAO"/>	
+	
+	<!-- contract -->
+	<bean id="contractDAO"
+	 	  class="com.spring.AtoZ.contract.dao.ContractDAOImpl"
+	 	  p:sqlSession-ref="sqlSession"/>
+	<bean id="contractService"
+	 	   class="com.spring.AtoZ.contract.service.ContractServiceImpl"
+	 	   p:contractDAO-ref="contractDAO"/>
+	 	  
+	<!-- dashboard -->
+	<bean id="dashboardDAO"
+		  class="com.spring.AtoZ.dashboard.dao.DashBoardDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="dashboardService"
+		  class="com.spring.AtoZ.dashboard.service.DashBoardServiceImpl"
+		  p:dashBoardDAO-ref="dashboardDAO"	/>
+		
+	<!-- employee -->
+	<bean id="employeeDAO"
+		  class="com.spring.AtoZ.employee.dao.EmployeeDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="employeeService"
+		  class="com.spring.AtoZ.employee.service.EmployeeServiceImpl"
+		  p:employeeDAO-ref="employeeDAO"/>		  	 	   	  	    		  	  	   		  		    	   	
+	
+	<!-- item -->
+	<bean id="itemDAO"
+		  class="com.spring.AtoZ.item.dao.ItemDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="itemService"
+		  class="com.spring.AtoZ.item.service.ItemServiceImpl"
+		  p:itemDAO-ref="itemDAO"/>	  
+
+	<!-- Member -->
+	<bean id="memberDAO"
+		  class="com.spring.AtoZ.member.dao.MemberDAOImpl"
+		  p:sqlSession-ref="sqlSession"
+		  />
+	<bean id="memberService" 
+		  class="com.spring.AtoZ.member.service.MemberServiceImpl"
+		  p:memberDAO-ref="memberDAO"
+		  />
+	
+	<!-- message -->	  
+	<bean id="messageDAO"
+		  class="com.spring.AtoZ.message.dao.MessageDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="messageService"
+		  class="com.spring.AtoZ.message.service.MessageServiceImpl"
+		  p:messageDAO-ref="messageDAO"/>
+	
+	<!-- mobile -->
+	<bean id="mobileDAO"
+		  class="com.spring.AtoZ.mobile.dao.MobileDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="mobileService"
+		  class="com.spring.AtoZ.mobile.service.MobileServiceImpl"
+		  p:mobileDAO-ref="mobileDAO"/>	  		  	  	  	
+	
+	<!-- notice -->
+	<bean id="attchDAO"
+		class="com.spring.AtoZ.attch.dao.AttchDAOImpl"
+		p:sqlSession-ref="sqlSession"/>
+	<bean id="noticeDAO"
+		  class="com.spring.AtoZ.notice.dao.NoticeDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="noticeService"
+		  class="com.spring.AtoZ.notice.service.NoticeServiceImpl"
+		  p:noticeDAO-ref="noticeDAO"
+		  p:attchDAO-ref="attchDAO"/>
+		  
+	<!--  order -->
+	<bean id="orderDAO"
+		  class="com.spring.AtoZ.order.dao.OrderDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="orderService"
+		  class="com.spring.AtoZ.order.service.OrderServiceImpl"
+		  p:orderDAO-ref="orderDAO"/>	  
+	
+	<!-- payment -->
+	<bean id="paymentDAO"
+		  class="com.spring.AtoZ.payment.dao.PaymentDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="paymentService"
+		  class="com.spring.AtoZ.payment.service.PaymentServiceImpl"
+		  p:paymentDAO-ref="paymentDAO"/>
+		  
+	<!-- qr -->
+	<bean id="qrDAO"
+		  class="com.spring.AtoZ.qr.dao.QRDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="qrService"
+		  class="com.spring.AtoZ.qr.service.QRServiceImpl"
+		  p:qrdao-ref="qrDAO"/>
+	
+	<!-- questions -->
+	<bean id="questionsDAO"
+		  class="com.spring.AtoZ.questions.dao.QuestionsDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="questionsService"
+		  class="com.spring.AtoZ.questions.service.QuestionsServiceImpl"
+		  p:questionsDAO-ref="questionsDAO"/>
+		
+	<!-- receive -->
+	<bean id="receiveDAO"
+		  class="com.spring.AtoZ.receive.dao.ReceiveDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="receiveService"
+		  class="com.spring.AtoZ.receive.service.ReceiveServiceImpl"
+		  p:receiveDAO-ref="receiveDAO"
+		  p:constructDAO-ref="constructDAO"/>
+	
+	<!-- release -->	  	  	  	  
+	<bean id="releaseDAO"
+		  class="com.spring.AtoZ.release.dao.ReleaseDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="releaseService"
+		  class="com.spring.AtoZ.release.service.ReleaseServiceImpl"
+		  p:releaseDAO-ref="releaseDAO"/>
+	
+	<!-- stock -->
+	<bean id="stockDAO"
+		  class="com.spring.AtoZ.stock.dao.StockDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="stockService"
+		  class="com.spring.AtoZ.stock.service.StockServiceImpl"
+		  p:stockDAO-ref="stockDAO"/>
+	
+	<!-- strategy -->
+	<bean id="strategyDAO"
+		  class="com.spring.AtoZ.strategy.dao.StrategyDAOImpl"
+		  p:sqlSession-ref="sqlSession"/>
+	<bean id="strategyService"
+		  class="com.spring.AtoZ.strategy.service.StrategyServiceImpl"
+		  p:strategyDAO-ref="strategyDAO"/>	  	  	  	  	  	  	  	  	  
+	
+			  		  	  	
+
+</beans>

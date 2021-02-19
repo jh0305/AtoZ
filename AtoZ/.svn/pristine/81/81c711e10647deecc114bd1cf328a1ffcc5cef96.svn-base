@@ -1,0 +1,146 @@
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="ServiceUse-Mapper">
+	
+	<select id="selectClientById" parameterType="str" resultType="client">
+		select *
+		from client
+		where id=#{id}
+	</select>
+	
+	<select id="selectClientGetSeqValue" resultType="int">
+		select client_seq.nextVal
+		from dual
+	</select>
+	
+	<update id="insertCOClient" parameterType="client">
+		insert into
+		client(cl_code, id, pwd, cl_name, cl_ceo, cl_regno, cl_tel, co_addr, cre_ymd, act_yn, cl_type, cl_email)
+		values(#{cl_code}, #{id}, #{pwd}, #{cl_name}, #{cl_ceo}, #{cl_regno}, #{cl_tel}, #{co_addr}, sysdate, '1', #{cl_type}, #{cl_email})
+	</update>
+	
+	<update id="insertWHClient" parameterType="client">
+		INSERT INTO client (
+	    cl_code,
+	    id,
+	    pwd,
+	    cl_name,
+	    cl_ceo,
+	    cl_regno,
+	    cl_email,
+	    cl_tel,
+	    wh_addr,
+	    cre_ymd,
+	    cl_type
+		) VALUES (
+	    #{cl_code},
+	    #{id},
+	    #{pwd},
+	    #{cl_name},
+	    #{cl_ceo},
+	    #{cl_regno},
+	    #{cl_email},
+	    #{cl_tel},
+	    #{wh_addr},
+	    sysdate,
+	    #{cl_type}
+	)
+	</update>
+	
+	<update id="insertWHCOClient" parameterType="client">
+		INSERT INTO client (
+	    cl_code,
+	    id,
+	    pwd,
+	    cl_name,
+	    cl_ceo,
+	    cl_regno,
+	    cl_email,
+	    cl_tel,
+	    co_addr,
+	    wh_addr,
+	    cre_ymd,
+	    cl_type
+		) VALUES (
+	    #{cl_code},
+	    #{id},
+	    #{pwd},
+	    #{cl_name},
+	    #{cl_ceo},
+	    #{cl_regno},
+	    #{cl_email},
+	    #{cl_tel},
+	    #{co_addr},
+	    #{wh_addr},
+	    sysdate,
+	    #{cl_type}
+	)
+	</update>
+	
+	<update id="insertWhType" parameterType="whtype">
+		insert into
+		wh_type (wh_code, cm_code) 
+		values (#{wh_code}, #{cm_code})
+	</update>
+	
+	<update id="insertWhPicture">
+		insert into 
+		wh_picture (pic_no, wh_code, pic_name) 
+    	values (wh_picture_seq.nextval, #{wh_code}, #{pic_name})	
+	</update>
+	
+	<select id="selectClientIdByClRegno" parameterType="str" resultType="str">
+		select id from client where cl_regno = #{cl_regno}
+	</select>
+	
+	<select id="selectByIdRegnoEmail" resultType="client" parameterType="com.spring.AtoZ.serviceUse.dto.BeforeFindPwdCommand">
+		select * from client where id=#{id} and cl_regno=#{cl_regno} and cl_email=#{cl_email}
+	</select>
+	
+	<update id="updatePwd" parameterType="com.spring.AtoZ.serviceUse.dto.ChangePwdCommand">
+		update client set pwd = #{pwd} where id=#{id}
+	</update>
+	
+	<sql id="search">
+		<if test="searchType == 'id'.toString()">
+			and id like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'cl_ceo'.toString()">
+			and cl_ceo like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'cl_name'.toString()">
+			and cl_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'cl_regno'.toString()">
+			and cl_regno like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	
+	<select id="selectSearchClientList" resultType="client">
+		select * from client
+		where id is not null
+		<include refid="search" />
+	</select>
+	
+	<select id="selectSearchClientListCount" resultType="int">
+		select count(*) from client
+		where id is not null
+		<include refid="search" />
+	</select>
+	
+	<select id="selectClientListCount">
+		select count(*) from client
+	</select>
+	
+	<select id="selectClientBycl_code" resultType="com.spring.AtoZ.member.dto.DetailMemberCommand" parameterType="str">
+		select client.*, (select sum(df_area) df_area from dong_floor where wh_code=cl_code) df_area from client where cl_code=#{cl_code}
+	</select>
+	
+	<update id="stscodeClient" >
+		update client
+		set sts_code = 'CR002', act_yn=1
+		where cl_code=#{cl_code} 
+	</update>
+</mapper>

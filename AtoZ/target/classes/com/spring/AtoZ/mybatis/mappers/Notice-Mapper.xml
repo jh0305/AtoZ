@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Notice-Mapper">
+	<sql id="search">
+		<if test="searchType == 'title'.toString()">
+			and title like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	
+	<!-- 공지사항 시퀀스 -->	
+	<select id="selectNoticeGetSeqValue" resultType="int">
+		select notice_seq.nextVal
+		from dual
+	</select>
+	
+	<select id="selectSearchTitleList" resultType="notice">
+		SELECT * 
+		FROM (
+			SELECT ROWNUM RN, A.* 
+				FROM (
+						SELECT * 
+						FROM notice 
+						ORDER BY ntc_no DESC 
+						) A
+				)
+		where title like '%'||#{keyword}||'%'
+	</select>
+	
+	<select id="selectSearchNoticeListCount" resultType="int">
+		select count(*) from notice
+		where title is not null
+		<include refid="search" />
+	</select>
+	
+	<select id="selectNoticeListCount">
+		select count(*) from notice
+	</select>
+	
+	<select id="selectNoticeBytitle" resultType="notice" parameterType="int">
+		select * from notice where ntc_no=#{ntc_no}
+	</select>
+	
+	<select id="selectNoticeByContent" resultType="notice">
+		select 
+		* 
+		from notice
+		where content like '%'||#{file_name}||'%'
+	</select>
+	
+	<insert id="insertNotice" parameterType="notice">
+		insert into 
+		notice (ntc_no, admin_id, title, content, wrt_ymd) 
+		values (#{ntc_no}, #{admin_id}, #{title}, #{content}, to_char(sysdate,'YYYYMMDD'))
+	</insert>
+	
+	<update id="updateNotice" parameterType="notice">
+		update notice set
+		title =#{title}, content =#{content}, upd_ymd =to_char(sysdate,'YYYYMMDD'), upd_id =#{upd_id} WHERE ntc_no =#{ntc_no} 
+	</update>
+	
+	<update id="deleteNotice">
+		delete from notice where ntc_no = #{ntc_no}
+	</update>
+	
+	<!-- 파일 관련 매퍼 -->
+	
+	<update id="insertNoticeFile">
+		INSERT INTO attch_file (
+	    file_no,
+	    ntc_no,
+	    file_name,
+	    file_type,
+	    upload_path,
+	    attcher
+	) VALUES (
+	    ATTCH_FILE_SEQ.NEXTVAL,
+	    #{ntc_no},
+	    #{file_name},
+	    #{file_type},
+	    #{upload_path},
+	    #{attcher}
+	)
+	</update>
+	
+	<select id="selectAttchByFile_no" resultType="attch">
+		select *
+		from attch_file
+		where file_no=#{file_no}
+	</select>
+		
+	<select id="selectAttchByNtc_no" resultType="attch">
+		select *
+		from attch_file
+		where ntc_no = #{ntc_no}
+	</select>
+	
+	<update id="deleteAttch">
+		delete from attch_file where file_no = #{file_no}
+	</update>
+	
+	<update id="deleteAllAttch">
+		delete from attch_file where ntc_no = #{ntc_no}
+	</update>
+
+	
+</mapper>

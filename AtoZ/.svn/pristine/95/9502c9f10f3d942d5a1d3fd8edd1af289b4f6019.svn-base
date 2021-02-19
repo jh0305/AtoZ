@@ -1,0 +1,158 @@
+package com.spring.AtoZ.payment.controller;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.spring.AtoZ.charge.dto.ChargeCommand;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.payment.service.PaymentService;
+import com.spring.AtoZ.vo.ClientVO;
+import com.spring.AtoZ.vo.PaymentVO;
+
+/***
+ * 
+ * @author 0122 심민규
+ * 
+ *         물류센터 측에서 비용청구를 하면 메인 페이지에서 탭메뉴 1.결제 필요리스트 에서 조회 할 수 있고, 클릭하면 청구서가 뜨며
+ *         청구서 확인 시 결제가 가능하다. 결제를 하면 결제 현황에서 확인이 가능하다.
+ */
+
+@Controller
+public class PaymentController {
+
+	@Autowired
+	PaymentService paymentService;
+
+	// 메인 페이지
+	@RequestMapping("/CO/payment/main")
+	public String main() throws Exception {
+		String url = "payment/main";
+		return url;
+	}
+
+	// 메인 페이지 결제필요목록
+	@RequestMapping("/CO/payment/paymentRequestList")
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> getPaymentRequestForm(SearchMap searchMap, String keyword, HttpSession session)
+			throws Exception {
+		ResponseEntity<Map<String, Object>> entity = null;
+
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String co_code = loginUser.getCl_code();
+
+		searchMap.setUrl("/CO/payment/paymentRequestList");
+		searchMap.put("keyword", keyword);
+		searchMap.put("co_code", co_code);
+
+		try {
+			Map<String, Object> dataMap = paymentService.getPaymentRequestForm(searchMap);
+			entity = new ResponseEntity<Map<String, Object>>(dataMap, HttpStatus.OK);
+		} catch (SQLException e) {
+			entity = new ResponseEntity<Map<String, Object>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		return entity;
+	}
+	
+	// 메인 페이지 결제완료목록
+	@RequestMapping("/CO/payment/paymentResultList")
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> getPaymentResultForm(SearchMap searchMap, String keyword, HttpSession session)
+			throws Exception {
+		ResponseEntity<Map<String, Object>> entity = null;
+
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String co_code = loginUser.getCl_code();
+
+		searchMap.setUrl("/CO/payment/paymentResultList");
+		searchMap.put("keyword", keyword);
+		searchMap.put("co_code", co_code);
+
+		try {
+			Map<String, Object> dataMap = paymentService.getPaymentResultForm(searchMap);
+			entity = new ResponseEntity<Map<String, Object>>(dataMap, HttpStatus.OK);
+		} catch (SQLException e) {
+			entity = new ResponseEntity<Map<String, Object>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		return entity;
+	}
+	
+	@RequestMapping(value="/CO/payment/getContractWH", method=RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<List<ClientVO>> getContractCO(String searchData, HttpSession session) throws Exception{
+		
+		ResponseEntity<List<ClientVO>> entity = null;
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String cl_code = loginUser.getCl_code();
+
+		map.put("searchData", searchData);
+		map.put("co_code", cl_code);
+		
+		try {
+			List<ClientVO> contractWH = paymentService.getContractWH(map);
+			entity = new ResponseEntity<List<ClientVO>>(contractWH,HttpStatus.OK);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			entity = new ResponseEntity<List<ClientVO>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return entity;
+	}
+	
+	@RequestMapping(value="/CO/payment/paymentConfirm", method=RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<List<PaymentVO>> getPaymentConfirmForm(HttpSession session, String pay_no) throws Exception{
+		ResponseEntity<List<PaymentVO>> entity = null;
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String cl_code = loginUser.getCl_code();
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("co_code", cl_code);
+		map.put("pay_no", pay_no);
+		
+		try {
+			List<PaymentVO> payment = paymentService.getPaymentConfirmForm(map);
+			entity = new ResponseEntity<List<PaymentVO>>(payment,HttpStatus.OK);
+		} catch (SQLException e) {
+			entity = new ResponseEntity<List<PaymentVO>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return entity;
+		
+	}
+	
+	@RequestMapping(value="/CO/payment/goPayment", method=RequestMethod.POST)
+	@ResponseBody
+	public void goPayment(HttpSession session, String pay_no) throws Exception{
+		PaymentVO payment = new PaymentVO();
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String cl_code = loginUser.getCl_code();
+		
+		payment.setPay_no(Integer.parseInt(pay_no));
+		
+		try {
+			paymentService.goPayment(payment);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+}

@@ -1,0 +1,184 @@
+package com.spring.AtoZ.receive.service;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.spring.AtoZ.common.dto.PageMaker;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.construct.dao.ConstructDAO;
+import com.spring.AtoZ.receive.dao.ReceiveDAO;
+import com.spring.AtoZ.receive.dto.ReceiveCommand;
+import com.spring.AtoZ.strategy.dto.StrategyStockCommand;
+import com.spring.AtoZ.vo.DongFloorVO;
+import com.spring.AtoZ.vo.EmployeeVO;
+import com.spring.AtoZ.vo.OrderItemVO;
+
+public class ReceiveServiceImpl implements ReceiveService {
+	private ReceiveDAO receiveDAO;
+	public void setReceiveDAO(ReceiveDAO receiveDAO) {
+		this.receiveDAO = receiveDAO;
+	}
+	
+	private ConstructDAO constructDAO;
+	public void setConstructDAO(ConstructDAO constructDAO) {
+		this.constructDAO = constructDAO;
+	}
+	
+	@Override
+	public Map<String, Object> getReceivePlanList(SearchMap sm) throws SQLException {
+		List<ReceiveCommand> list2 = receiveDAO.selectSearchReceivePlanList(sm);
+			
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(receiveDAO.selectReceiveListPlanCount(sm));
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("dataList", list2);
+		dataMap.put("pageMaker", pageMaker);
+
+		return dataMap;
+		
+	}
+	@Override
+	public Map<String, Object> getReceiveComplList(SearchMap sm) throws SQLException {
+		List<ReceiveCommand> list2 = receiveDAO.selectSearchReceiveComplList(sm);
+		
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(receiveDAO.selectReceiveListComplCount(sm));
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("dataList", list2);
+		dataMap.put("pageMaker", pageMaker);
+
+		return dataMap;
+	}
+	@Override
+	public Map<String, Object> getReceiveReqList(SearchMap sm) throws SQLException {
+		List<ReceiveCommand> list2 = receiveDAO.selectSearchReceiveReqList(sm);
+		
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(receiveDAO.selectReceiveListReqCount(sm));
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("dataList", list2);
+		dataMap.put("pageMaker", pageMaker);
+
+		return dataMap;
+	}
+	@Override
+	public void modifyManager(Map<String, String>[] arr) throws SQLException {
+		int len = arr.length;
+		int result = 0;
+		for(Map<String, String> map : arr) {
+			result += receiveDAO.updateManager(map);
+		} 
+		if(result != len) {
+			throw new SQLException();
+		}
+	}
+	@Override
+	public Map<String, Object> getEmployeeList(SearchMap sm) throws SQLException {
+		List<EmployeeVO> list2 = receiveDAO.selectEmployeeList(sm);
+		
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(receiveDAO.selectEmployeeListCount(sm));
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("dataList", list2);
+		dataMap.put("pageMaker", pageMaker);
+		return dataMap;
+	}
+	@Override
+	public List<OrderItemVO> getOrderItemList(String ord_no) throws SQLException {
+		List<OrderItemVO> list = receiveDAO.selectOrderItemList(ord_no);
+		return list;
+	}
+	@Override
+	public void decide(Map<String, Object> dataMap) throws SQLException {
+		String[] arr = (String[]) dataMap.get("arr");
+		
+		int len = arr.length;
+		int result = receiveDAO.updateDecision(dataMap);
+		
+		if(result != len) {
+			throw new SQLException();
+		}
+		
+	}
+	@Override
+	public List<ReceiveCommand> getTodayReceiveList() throws SQLException {
+		List<ReceiveCommand> list = receiveDAO.selectTodayReceiveList();
+		return list;
+	}
+	@Override
+	public Map<String, Object>  getTodayReceiveList(String wh_code, SearchMap sm) throws SQLException {
+		Map<String, Object> dataMap = new HashMap<>();
+		
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(receiveDAO.selectTodayReceiveCount(wh_code));
+		
+		List<ReceiveCommand> list = receiveDAO.selectTodayReceiveList(wh_code, sm);
+		List<DongFloorVO> dongFloorList = constructDAO.selectDongFloor(wh_code);
+		dataMap.put("pageMaker", pageMaker);
+		dataMap.put("receiveList", list);
+		dataMap.put("dongFloorList", dongFloorList);
+		
+		return dataMap;
+	}
+	
+	@Override
+	public Map<String,Object> getTempStockList(String ord_no) throws SQLException {
+		String sts_code = receiveDAO.selectOrderSts(ord_no);
+		List<StrategyStockCommand> list = new ArrayList<>();
+		if(sts_code.equals("PR003")) {
+			list = receiveDAO.selectTempStockList(ord_no);
+		} else if (sts_code.equals("PR002")){
+			list = receiveDAO.selectTempItemList(ord_no);
+		}
+		Map<String,Object> dataMap = new HashMap<>();
+		dataMap.put("list", list);
+		dataMap.put("sts", sts_code);
+		return dataMap;
+	}
+	
+	@Override
+	public String getOrderSts(String ord_no) throws SQLException{
+		return receiveDAO.selectOrderSts(ord_no);
+	}
+
+	@Override
+	public Map<String, Object> getZoneByCode(Map<String, String> search)
+			throws SQLException {
+		Map<String, Object> dataMap = new HashMap<>();
+		List<String> list = receiveDAO.selectZoneByCode(search);
+		dataMap.put("zones", list);
+		return dataMap;
+	}
+
+	@Override
+	public void modifyInvLoc(Map<String, String> data) throws SQLException {
+		receiveDAO.updateInvLoc(data);
+		
+	}
+
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+

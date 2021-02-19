@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Member-Mapper">
+	
+	<sql id="search">
+		<if test="searchType == 'cl_id'.toString()">
+			and id like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'cl_ceo'.toString()">
+			and cl_ceo like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'cl_name'.toString()">
+			and cl_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'cl_regno'.toString()">
+			and cl_regno like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	
+	<select id="selectSearchClientList" resultType="client">
+		select * from client
+		where id is not null and cl_type != 'ROLE_SY'
+		<include refid="search" />
+	</select>
+	
+	<select id="selectSearchClientListCount" resultType="int">
+		select count(*) from client
+		where id is not null and cl_type != 'ROLE_SY'
+		<include refid="search" />
+	</select>
+	
+	<select id="selectClientListCount">
+		select count(*) from client and cl_type != 'ROLE_SY'
+	</select>
+	
+	<select id="selectClientBycl_code" resultType="com.spring.AtoZ.member.dto.DetailMemberCommand" parameterType="str">
+		select client.*, (select sum(df_area) df_area from dong_floor where wh_code=cl_code) df_area from client where cl_code=#{cl_code}
+	</select>
+	
+	<select id="selectWHPicture" resultType="whPicture" parameterType="str">
+		select * from WH_PICTURE where wh_code=#{cl_code}
+	</select>
+	<update id="updateCompany" parameterType="com.spring.AtoZ.member.dto.UpdateMemberCommand">
+		update client set cl_name=#{cl_name}, cl_ceo=#{cl_ceo}, cl_regno=#{cl_regno}, cl_email=#{cl_email}, cl_tel=#{cl_tel}, co_addr=#{co_addr}
+		where id=#{id}
+	</update>
+
+	<update id="updateWarehouse" parameterType="com.spring.AtoZ.member.dto.UpdateMemberCommand">
+		update client set cl_name=#{cl_name}, cl_ceo=#{cl_ceo}, cl_regno=#{cl_regno}, cl_email=#{cl_email}, cl_tel=#{cl_tel}, wh_addr=#{wh_addr} 
+		where id=#{id}
+	</update>
+</mapper>
+
+
+

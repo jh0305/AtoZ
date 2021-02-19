@@ -1,0 +1,46 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+   
+    <div class="content">
+    	<div class="logo-div">
+    		<div class="logo" style="background-image:url('<%=request.getContextPath() %>/resources/images/AZ.png')">
+    		</div>
+    	</div>
+	    <div class="login-form">
+	    	<form id="loginForm" action="m.login" method="post">
+		    	<div class="row">
+		    		<div class="id-form">
+		    			<input type="text" class="form-control h-up" id="id" name="id" placeholder="아이디를 입력해 주세요." value="">
+		    		</div>
+		    	</div>
+		    	<div class="row">
+		    		<div class="id-form">
+		    			<input type="password" class="form-control h-up" id="pwd" name="pwd" placeholder="비밀번호를 입력해 주세요." value="">
+		    		</div>
+		    	</div>
+		    	<a class="btn btn-info w-100 h-up" id="login" href="javascript:void(0);">로그인</a>
+	    	</form>
+	    </div><!-- /login-form -->
+	</div><!-- /content -->
+	
+
+<script>
+	window.onload=function(){
+		$('#login').on('click',function(){
+			var id=$.trim($('#id').val());
+			var pwd=$.trim($('#pwd').val());
+			var emptyCheck=/\s/g; //공백체크
+			var loginCheck=/^[a-zA-Z0-9]{4,16}$/; //아이디체크
+			var pwdCheck=/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,16}$/; //비밀번호체크
+			
+			if(id=="" || pwd==""){
+				alert("아이디 혹은 비밀번호를 입력해주세요.");
+// 			}else if(loginCheck.test(id) || pwdCheck.test(pwd)){
+// 				alert("아이디 혹은 비밀번호를 알맞은 형식으로 입력하세요.");
+			}else{
+				$('#loginForm').submit();
+			}
+		});
+	}
+	
+</script>

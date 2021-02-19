@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	
+	<typeAliases>
+		<typeAlias type="java.lang.String" alias="str"/>
+		<typeAlias type="java.lang.Integer" alias="int"/>
+		<typeAlias type="com.spring.AtoZ.vo.MenuVO" alias="menu"/>
+		<typeAlias type="com.spring.AtoZ.vo.ClientVO" alias="client"/>
+		<typeAlias type="com.spring.AtoZ.vo.EmployeeVO" alias="emp"/>
+		<typeAlias type="com.spring.AtoZ.dashboard.dto.EmpCommand" alias="empcmd"/>
+		<typeAlias type="com.spring.AtoZ.vo.EmployeeVO" alias="emp"/>
+		<typeAlias type="com.spring.AtoZ.vo.CommonCodeVO" alias="coCode"/>
+		<typeAlias type="com.spring.AtoZ.vo.OrderVO" alias="order"/>
+		<typeAlias type="com.spring.AtoZ.vo.NoticeVO" alias="notice"/>
+		<typeAlias type="com.spring.AtoZ.notice.dto.NoticeRegist" alias="noticeRegist"/>
+		<typeAlias type="com.spring.AtoZ.vo.AttchVO" alias="attch"/>
+		<typeAlias type="com.spring.AtoZ.contract.dto.WhsListCommand" alias="whslist"/>
+		<typeAlias type="com.spring.AtoZ.vo.OrderItemVO" alias="orderItem"/>
+		<typeAlias type="com.spring.AtoZ.order.dto.OrderCommand" alias="orderCommand"/>
+		<typeAlias type="com.spring.AtoZ.order.dto.OrderDetailCommand" alias="orderDetail"/>
+		<typeAlias type="com.spring.AtoZ.contract.dto.DetailAreaCommand" alias="detailArea"/>
+		<typeAlias type="com.spring.AtoZ.contract.dto.ContractListCommand" alias="crList"/>
+		<typeAlias type="com.spring.AtoZ.vo.C2CConctractVO" alias="c2c"/> 
+		<typeAlias type="com.spring.AtoZ.vo.CRDetailVO" alias="crdetail"/> 
+		<typeAlias type="com.spring.AtoZ.contract.dto.WhsListCommand" alias="whslist"/>
+		<typeAlias type="com.spring.AtoZ.receive.dto.ReceiveCommand" alias="receive"/>
+		<typeAlias type="com.spring.AtoZ.vo.StandardVO" alias="standard"/>
+		<typeAlias type="com.spring.AtoZ.vo.CooperatorVO" alias="cooperator"/>
+		<typeAlias type="com.spring.AtoZ.contract.dto.ContractDetailCommand" alias="crcmd"/>
+		<typeAlias type="com.spring.AtoZ.vo.DetailMngVO" alias="detailMng"/>    
+		<typeAlias type="com.spring.AtoZ.contract.dto.RequestContractCommand" alias="reqcrcmd"/>
+		<typeAlias type="com.spring.AtoZ.vo.ZoneVO" alias="zone"/>
+		<typeAlias type="com.spring.AtoZ.vo.MessageVO" alias="message"/>
+		<typeAlias type="com.spring.AtoZ.charge.dto.ChargeCommand" alias="chargeCommand"/>
+		<typeAlias type="com.spring.AtoZ.vo.WHTypeVO" alias="whtype" />
+		<typeAlias type="com.spring.AtoZ.charge.dto.ConfirmCommand" alias="confirm" />
+		<typeAlias type="com.spring.AtoZ.stock.dto.StockListCommand" alias="stockList" />
+		<typeAlias type="com.spring.AtoZ.stock.dto.StockDetailCommand" alias="stockDetail" />
+		<typeAlias type="com.spring.AtoZ.vo.ReleaseVO" alias="release" />
+		<typeAlias type="com.spring.AtoZ.release.dto.ExpectedRelease" alias="expectedRelease"/>
+		<typeAlias type="com.spring.AtoZ.vo.RlsItemVO" alias="rlsItem"/>
+		<typeAlias type="com.spring.AtoZ.vo.PaymentVO" alias="payment" />
+		<typeAlias type="com.spring.AtoZ.vo.QuestionsVO" alias="questions" />
+		<typeAlias type="com.spring.AtoZ.vo.InvHistoryVO" alias="invHistory" />
+		<typeAlias type="com.spring.AtoZ.stock.dto.StockCheckCommand" alias="stockCheck" />
+		<typeAlias type="com.spring.AtoZ.vo.WHPictureVO" alias="whPicture"/>
+	</typeAliases> 
+
+</configuration>

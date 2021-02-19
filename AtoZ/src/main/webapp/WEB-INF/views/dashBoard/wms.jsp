@@ -1,0 +1,197 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jstl/fmt" %>
+<c:set var="rlsReqNum" value="${dataMap.widgetNums.rlsReqNum}"/>
+<c:set var="inReqNum" value="${dataMap.widgetNums.inReqNum}"/>
+<c:set var="inPlanNum" value="${dataMap.widgetNums.inPlanNum}"/>
+<c:set var="outPlanNum" value="${dataMap.widgetNums.outPlanNum}"/>
+<c:set var="ctrReqNum" value="${dataMap.widgetNums.ctrReqNum}"/>
+<c:set var="emplist" value="${dataMap.empList }"/> 
+<style>
+	.row.row-deck.row-cards .card {
+	    width: 19%;
+	    margin-right: 13px;
+	}
+	.wgrow{
+	    padding: 10px 0px 0px 15px;
+	}
+	.wgheader{
+		padding: 0px 50px;
+	}
+	.wgcol{
+		padding-left : 30px;
+	}
+	.dashrow{
+		margin-top : 10px;
+	}
+	.emprow{
+		padding-left : 35%;
+	}
+	.prgbar{
+		margin-top : 8px;
+		width : 80%;
+	}
+	.wmsCard:hover{
+		background : #e1f1f5;
+		cursor : pointer;
+	}
+</style>
+<div style="padding: 0px 15px;">
+	<div class="row row-deck row-cards" style="min-width: 1649px;">
+			<div class="card" style="margin-left: 7px;">
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<div class="header wgheader">계약요청건수</div>
+					</div>
+					<div class="row wgrow">
+						<div class="col-auto">
+							<span class="bg-blue text-white avatar"> 
+							<svg xmlns="http://www.w3.org/2000/svg"
+									class="icon icon-tabler icon-tabler-edit" width="52"
+									height="52" viewBox="0 0 24 24" stroke-width="1.5"
+									stroke="#ffffff" fill="none" stroke-linecap="round"
+									stroke-linejoin="round">
+  							<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+  							<path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+  							<path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+  							<line x1="16" y1="5" x2="19" y2="8" />
+							</svg>
+							</span>
+						</div>
+						<div class="col wgcol">
+							<div class="h1 mb-3">
+								<strong>${ctrReqNum}</strong>&nbsp;건
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="card wmsCard" onclick="getInReqList();">
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<div class="header wgheader">입고승인요청</div>
+					</div>
+					<div class="row wgrow">
+						<div class="col-auto">
+							<span class="bg-yellow text-white avatar"> <svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="icon icon-tabler icon-tabler-bell-ringing" width="44"
+									height="44" viewBox="0 0 24 24" stroke-width="1.5"
+									stroke="#ffffff" fill="none" stroke-linecap="round"
+									stroke-linejoin="round">
+							  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+							  <path
+										d="M10 5a2 2 0 0 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
+							  <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
+							  <path d="M21 6.727a11.05 11.05 0 0 0 -2.794 -3.727" />
+							  <path d="M3 6.727a11.05 11.05 0 0 1 2.792 -3.727" />
+							</svg>
+							</span>
+						</div>
+						<div class="col wgcol">
+							<div class="h1 mb-3">
+								<strong>${inReqNum}</strong>&nbsp;건
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="card wmsCard" onclick="getOutReqList();">
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<div class="header wgheader">출고승인요청</div>
+					</div>
+					<div class="row wgrow">
+						<div class="col-auto">
+							<span class="bg-purple text-white avatar"> <svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="icon icon-tabler icon-tabler-bell-ringing" width="44"
+									height="44" viewBox="0 0 24 24" stroke-width="1.5"
+									stroke="#ffffff" fill="none" stroke-linecap="round"
+									stroke-linejoin="round">
+							  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+							  <path
+										d="M10 5a2 2 0 0 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
+							  <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
+							  <path d="M21 6.727a11.05 11.05 0 0 0 -2.794 -3.727" />
+							  <path d="M3 6.727a11.05 11.05 0 0 1 2.792 -3.727" />
+							</svg>
+							</span>
+						</div>
+						<div class="col wgcol">
+							<div class="h1 mb-3">
+								<strong>${rlsReqNum}</strong>&nbsp;건
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="card wmsCard" onclick="getTodayInPlan();">
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<div class="header wgheader">금일입고예정</div>
+					</div>
+					<div class="row wgrow">
+						<div class="col-auto">
+							<span class="bg-green text-white avatar"> <svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="icon icon-tabler icon-tabler-building-warehouse"
+									width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5"
+									stroke="#ffffff" fill="none" stroke-linecap="round"
+									stroke-linejoin="round">
+								  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+								  <path d="M3 21v-13l9 -4l9 4v13" />
+								  <path d="M13 13h4v8h-10v-6h6" />
+								  <path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3" />
+								</svg>
+							</span>
+						</div>
+						<div class="col wgcol">
+							<div class="h1 mb-3">
+								<strong>${inPlanNum}</strong>&nbsp;건
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="card wmsCard" onclick="getTodayOutPlan();">
+				<div class="card-body">
+					<div class="d-flex align-items-center">
+						<div class="header wgheader">금일출고예정</div>
+					</div>
+					<div class="row wgrow">
+						<div class="col-auto">
+							<span class="bg-blue text-white avatar"> <svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="icon icon-tabler icon-tabler-truck-delivery" width="44"
+									height="44" viewBox="0 0 24 24" stroke-width="1.5"
+									stroke="#ffffff" fill="none" stroke-linecap="round"
+									stroke-linejoin="round">
+							  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+							  <circle cx="7" cy="17" r="2" />
+							  <circle cx="17" cy="17" r="2" />
+							  <path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
+							  <line x1="3" y1="9" x2="7" y2="9" />
+							</svg>
+							</span>
+						</div>
+						<div class="col wgcol">
+							<div class="h1 mb-3">
+								<strong>${outPlanNum}</strong>&nbsp;건
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+	</div>
+	<div class="row row-deck row-cards dashrow">
+		<div class="col-lg-7" id="reqCard">			
+		</div>
+		<div class="col-lg-5" id="planCard">			
+		</div>
+	</div>
+</div>
+
+<%@ include file="wms_js.jsp" %>
+

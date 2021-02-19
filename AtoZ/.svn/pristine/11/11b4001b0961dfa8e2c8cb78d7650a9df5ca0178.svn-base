@@ -1,0 +1,54 @@
+package com.spring.AtoZ.vo;
+
+public class DongFloorVO {
+	private String wh_code;
+	private String dong_name;
+	private String floor_name;
+	private String df_dsc;
+	private int df_width;
+	private int df_lngth;
+	private int df_area;
+	
+	public String getWh_code() {
+		return wh_code;
+	}
+	public void setWh_code(String wh_code) {
+		this.wh_code = wh_code;
+	}
+	public String getDong_name() {
+		return dong_name;
+	}
+	public void setDong_name(String dong_name) {
+		this.dong_name = dong_name;
+	}
+	public String getFloor_name() {
+		return floor_name;
+	}
+	public void setFloor_name(String floor_name) {
+		this.floor_name = floor_name;
+	}
+	public String getDf_dsc() {
+		return df_dsc;
+	}
+	public void setDf_dsc(String df_dsc) {
+		this.df_dsc = df_dsc;
+	}
+	public int getDf_width() {
+		return df_width;
+	}
+	public void setDf_width(int df_width) {
+		this.df_width = df_width;
+	}
+	public int getDf_lngth() {
+		return df_lngth;
+	}
+	public void setDf_lngth(int df_lngth) {
+		this.df_lngth = df_lngth;
+	}
+	public int getDf_area() {
+		return df_area;
+	}
+	public void setDf_area(int df_area) {
+		this.df_area = df_area;
+	}
+}

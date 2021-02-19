@@ -1,0 +1,52 @@
+package com.spring.AtoZ.release.dto;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.spring.AtoZ.vo.RlsItemVO;
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ReleaseCom {
+	private int rls_no;
+    private String wh_code;
+    private String co_code;
+    private String dst_code;
+    private String dst_addr;
+    private RlsItemVO[] rlsItemArray;
+	public int getRls_no() {
+		return rls_no;
+	}
+	public void setRls_no(int rls_no) {
+		this.rls_no = rls_no;
+	}
+	public String getWh_code() {
+		return wh_code;
+	}
+	public void setWh_code(String wh_code) {
+		this.wh_code = wh_code;
+	}
+	public String getCo_code() {
+		return co_code;
+	}
+	public void setCo_code(String co_code) {
+		this.co_code = co_code;
+	}
+	public String getDst_code() {
+		return dst_code;
+	}
+	public void setDst_code(String dst_code) {
+		this.dst_code = dst_code;
+	}
+	public String getDst_addr() {
+		return dst_addr;
+	}
+	public void setDst_addr(String dst_addr) {
+		this.dst_addr = dst_addr;
+	}
+	public RlsItemVO[] getRlsItemArray() {
+		return rlsItemArray;
+	}
+	public void setRlsItemArray(RlsItemVO[] rlsItemArray) {
+		this.rlsItemArray = rlsItemArray;
+	}
+	
+    
+    
+}

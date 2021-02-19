@@ -1,0 +1,222 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+<script>
+	//메인 체크박스 클릭시 하위 체크박스를 모두 클릭처리 한다.
+	var flag = "N";
+	var tr = $("#list_tbody").children();
+	function goCheck(th){
+		$("input[name='checkReq']").prop("checked",$(th).prop("checked"));			
+	};
+	
+	// 체크된 서브박스 갯수 상태에 따라 메인 체크박스 온오프 한다.
+	function goCheckCnt(){
+		var cnt = 0;
+		var checks = $("input[name='checkReq']");		
+		var len = checks.length;
+			
+		$.each(checks, function(i){
+			if(checks[i].checked){
+				cnt++;
+			}
+		});
+		if(cnt < len){
+			$("#main_check").prop("checked", false);
+		} else if (cnt == len){
+			$("#main_check").prop("checked", true);
+		}
+	};
+	
+	// 검색 조건에 해당하는 발주 리스트를 검색한다.
+	var req_ymd = " ";
+	var req_ymd_after = " ";
+	var deli_ymd = " ";
+	var deli_ymd_after = " ";
+	function goOrderListSearch(){
+		// 검색 값
+		req_ymd = $("input[id='req_ymd']").val().split("-");
+		req_ymd = (req_ymd[0] + req_ymd[1] + req_ymd[2]);
+		req_ymd_after = $("input[id='req_ymd_after']").val().split("-");
+		req_ymd_after = (req_ymd_after[0] + req_ymd_after[1] + req_ymd_after[2]);
+		var ord_mngr = $("input[name='ord_mngr']").val();
+		
+		deli_ymd = $("input[id='deli_ymd']").val().split("-");
+		deli_ymd = (deli_ymd[0] + deli_ymd[1] + deli_ymd[2]);
+		deli_ymd_after = $("input[id='deli_ymd_after']").val().split("-");
+		deli_ymd_after = (deli_ymd_after[0] + deli_ymd_after[1] + deli_ymd_after[2]);
+		var wh_code = $("input[name='wh_code']").val();
+		
+		if(req_ymd == "undefined" || req_ymd == "undefinedundefined" || req_ymd == " undefinedundefined"){
+			req_ymd = " ";
+		}
+		if(req_ymd_after == "undefined" || req_ymd_after == "undefinedundefined"){
+			req_ymd_after = " ";
+		}
+		if(deli_ymd == "undefined" || deli_ymd == "undefinedundefined"){
+			deli_ymd = " ";
+		}
+		if(deli_ymd_after == "undefined" || deli_ymd_after == "undefinedundefined"){
+			deli_ymd_after = " ";
+		}
+		
+		var data = {
+			req_ymd : req_ymd,
+			req_ymd_after : req_ymd_after,
+			ord_mngr : ord_mngr,
+			deli_ymd : deli_ymd,
+			deli_ymd_after : deli_ymd_after,
+			wh_code : wh_code
+		};
+
+		$.ajax({
+			url : "<%=request.getContextPath()%>/CO/order/getOrderListWhere",
+			data : data,
+			type : 'post',
+			dataType : "json",
+			success : function(res) {
+				// 티바디 를 재구성한다.
+				$("tbody[id='list_tbody']").empty();
+				$.each(res, function(i){
+					var sts_code = res[i].sts_code
+					var sts_html = "";
+					if(sts_code == "PR001"){
+						sts_html = '<td name="'+sts_code+'" class="sts_code text-center">요청</td>';
+					}else if(sts_code == "PR002"){
+						sts_html = '<td name="'+sts_code+'" class="sts_code text-center">승인</td>';
+					}else{
+						sts_html = '<td name="'+sts_code+'" class="sts_code text-center">완료</td>';
+					}
+					
+					var code = "";
+					code += '<tr onclick="open_modify_dialog(this);" class="list_tr">';
+					code += '	<td onclick="event.cancelBubble=true"><input type="hidden" name="ord_no" value="' +res[i].ord_no+ '"/><input onclick="goCheckCnt();" name="checkReq" class="form-check-input m-0 align-middle" type="checkbox" aria-label="Select invoice"></td>';	
+					code += '	<td name="" class=" text-center">' + res[i].req_ymd + '</td>';	
+					code += '	<td name="" class=" text-center">' + res[i].ord_mngr + '</td>';	
+					code += '	<td name="" class=" text-center">' + res[i].wh_code + '</td>';	
+					code += '	<td name="" class=" text-center">' + res[i].deli_ymd + '</td>';	
+					code += '	'+sts_html+'';	
+					code += '</tr>';
+					$("tbody[id='list_tbody']").append(code);
+				});
+			},
+			error : function(req) {
+				alert("상태 : " + req.status);
+			}
+		});
+	};
+	
+	// 삭제 버튼 클릭시 선택된 행의 발주를 취소(삭제)한다.
+	function removeOrder(){
+		if(!(confirm("선택된 발주 요청을 취소하시겠습니까?"))){
+			return;
+		}
+		var boxs = $("input[name='checkReq']");
+		var arr = "";
+		var cnt = 0;
+		
+		for(var box of boxs){
+			if($(box).prop("checked")){
+				if(cnt > 0 ){
+					arr += ",";
+				}
+				if($(box).siblings('input[name="ord_no"]').parents('tr').find('td').last().text() != '요청'){
+					alert("요청 상태인 발주만 취소 할 수 있습니다.");
+					return;
+				}
+				arr += $(box).siblings('input[name="ord_no"]').val();
+				cnt++;
+			}
+		}
+		
+		if(cnt == 0){
+			alert("선택된 발주 내역이 없습니다.");
+			return;
+		}
+		
+		console.log(arr);
+		$.ajax({
+			url : "<%=request.getContextPath()%>/CO/order/removeOrder",
+			data : {arr : arr},
+			type : 'get',
+			dateType : "integer",
+			success : function(res) {
+				if(res > 0){
+					location.reload();
+				}
+			},
+			error : function(req) {
+				alert("상태 : " + req.status);
+			}
+		});
+	}
+	
+	function registOrder(){
+		
+	}
+	
+	// 창고 검색 팝업 오픈 액션 함수
+	var input_name_wh_code = null;
+	function open_whSearch(th){
+		input_name_wh_code = $(th).closest('div[class="row"]').find('input[name="wh_code"]');
+		
+		openDial($('#whSearch'), 480, 600, false);
+	}
+	
+	
+	var pick_modify_ord_no = null;
+	function open_modify_dialog(th){
+		
+		pick_modify_ord_no = $(th).find('input[name="ord_no"]').val();
+		
+		var modify_ord_no = $(th).find('input[name="ord_no"]').val();
+		console.log("modify_ord_no : " + modify_ord_no);
+		
+		$.ajax({
+			url : "<%=request.getContextPath()%>/CO/order/getModifyForm",
+			data : {
+				"ord_no" : modify_ord_no
+			},
+			datatype : "json",
+			type : "get",
+			success : function(res){
+				var req_ymd = res.order.req_ymd;
+				req_ymd = req_ymd.substring(0,4) + "-" + req_ymd.substring(4,6) + "-" + req_ymd.substring(6,8);
+				
+				var ord_mngr = res.order.ord_mngr;
+				
+				var deli_ymd = res.order.deli_ymd;
+				deli_ymd = deli_ymd.substring(0,4) + "-" + deli_ymd.substring(4,6) + "-" + deli_ymd.substring(6,8);
+				
+				var wh_code = res.order.wh_code;
+				
+				$('input[id="modify_req_ymd"]').val(req_ymd);
+				$('input[id="modify_ord_mngr"]').val(ord_mngr);
+				$('input[id="modify_deli_ymd"]').val(deli_ymd);
+				$('input[name="modify_wh_code"]').val(wh_code);
+				
+				var items = res.orderDetailCommand
+				
+				for(item of items){
+					var code = "";
+					code += '<tr class="item-tr item_true">';
+					code += '	<td></td>';
+					code += '	<td name="item_code" class="item-code text-center">'+item.item_no+'</td>';
+					code += '	<td name="item_name" class="item-name text-center">'+item.item_name+'</td>';
+					code += '	<td name="cprt_code" class="cprt-code text-center">'+item.cp_code+'</td>';
+					code += '	<td name="cprt_name" class="cprt-name text-center">'+item.cp_name+'</td>';
+					code += '	<td name="item_std" class="item-std text-center">'+item.std_name+'</td>';
+					code += '	<td name="item_ea" class="item-ea text-center"><input readonly value="'+item.qty+'" style="background:white; padding: 3px 0px; text-align:center; margin:auto; width:50%;" maxlength="3" type="text" class="item_ea_value form-control"></td>';
+					code += '</tr>';
+					
+					$("#modify_tbody").empty();
+					$("#modify_tbody").append(code);
+				}
+				
+			},
+			error : function(req) {
+				alert("에러 : " + req.status);
+			}
+		});
+		openDial($('#order_modify_dialog'), 878, 500);
+	}
+</script>

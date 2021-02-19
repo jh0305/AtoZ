@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Common-Mapper">
+	
+	
+	<select id="selectMenuByMcode" resultType="menu" >
+		SELECT *
+		FROM menu
+		WHERE mn_code = #{mCode}
+	</select>
+	
+	<select id="selectMenuList" resultType="menu" >
+		select *
+		from menu
+		WHERE mn_lvl = 1 AND is_nav = 1		
+	</select>
+	
+	<select id="selectSubMenuList" resultType="menu" >
+		select *
+		from menu
+		WHERE mn_lvl = 2 AND is_nav = 1		
+	</select>
+	
+</mapper>

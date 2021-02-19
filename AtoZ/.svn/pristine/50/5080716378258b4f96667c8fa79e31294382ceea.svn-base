@@ -1,0 +1,153 @@
+package com.spring.AtoZ.serviceUse.service;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.spring.AtoZ.common.dto.PageMaker;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.member.dto.DetailMemberCommand;
+import com.spring.AtoZ.serviceUse.dao.ServiceUseDAO;
+import com.spring.AtoZ.serviceUse.dto.ApproveClient;
+import com.spring.AtoZ.serviceUse.dto.BeforeFindPwdCommand;
+import com.spring.AtoZ.serviceUse.dto.COClient;
+import com.spring.AtoZ.serviceUse.dto.ChangePwdCommand;
+import com.spring.AtoZ.utils.SendMail;
+import com.spring.AtoZ.vo.ClientVO;
+import com.spring.AtoZ.vo.WHPictureVO;
+import com.spring.AtoZ.vo.WHTypeVO;
+
+public class ServiceUseServiceImpl implements ServiceUseService {
+	private ServiceUseDAO serviceUseDAO;
+	public void setServiceUseDAO(ServiceUseDAO serviceUseDAO) {
+		this.serviceUseDAO = serviceUseDAO;
+	}
+	
+	@Override
+	public void login(String id, String pwd, HttpSession session) throws SQLException {
+		
+		ClientVO client = serviceUseDAO.selectClientById(id);
+//		if(client == null) throw new NotFoundIDException();
+//		if(!pwd.equals(client.getPwd())) throw new InvalidPasswordException();
+		
+		session.setAttribute("loginUser", client);
+		session.setMaxInactiveInterval(20*60);
+	}
+	@Override
+	public ClientVO getClient(String id) throws SQLException {
+		ClientVO client = serviceUseDAO.selectClientById(id);
+		return client;
+	}
+	
+	//기업회원추가
+	@Override
+	public void registCOClient(COClient COclient) throws SQLException {
+		int cl_no = serviceUseDAO.clientSeq();
+		COclient.setCl_code("CO"+Integer.toString(cl_no));
+		COclient.setCl_tel(COclient.getCl_tel().replace(",", "-"));
+		COclient.setCl_email(COclient.getCl_email().replace(",", "@"));
+		serviceUseDAO.insertCOClient(COclient);
+		
+	}
+	@Override
+	public void registWHClient(ClientVO client) throws SQLException {
+		int cl_no = serviceUseDAO.clientSeq();
+		client.setCl_code("WH"+Integer.toString(cl_no));
+		client.setCl_tel(client.getCl_tel().replace(",", "-"));
+		client.setCl_email(client.getCl_email().replace(",", "@"));
+		serviceUseDAO.insertWHClient(client);
+		
+		WHTypeVO whType = new WHTypeVO();
+		for(int i=0; i<client.getCm_codeList().length; i++) {
+			whType.setWh_code("WH"+Integer.toString(cl_no));
+			whType.setCm_code(client.getCm_codeList()[i]);
+			serviceUseDAO.insertWHType(whType);
+		}
+		
+		
+		for(WHPictureVO whPicture:client.getWhPictureList()) {
+			whPicture.setWh_code("WH"+Integer.toString(cl_no));
+			serviceUseDAO.insertWHpicture(whPicture);
+		}
+	}
+	@Override
+	public void registWHCOClient(ClientVO client) throws SQLException {
+		int cl_no = serviceUseDAO.clientSeq();
+		client.setCl_code("WHCO"+Integer.toString(cl_no));
+		client.setCl_tel(client.getCl_tel().replace(",", "-"));
+		client.setCl_email(client.getCl_email().replace(",", "@"));
+		serviceUseDAO.insertWHCOClient(client);
+		
+		WHTypeVO whType = new WHTypeVO();
+		for(int i=0; i<client.getCm_codeList().length; i++) {
+			whType.setWh_code("WHCO"+Integer.toString(cl_no));
+			whType.setCm_code(client.getCm_codeList()[i]);
+			serviceUseDAO.insertWHType(whType);
+		}
+		
+		
+		for(WHPictureVO whPicture:client.getWhPictureList()) {
+			whPicture.setWh_code("WHCO"+Integer.toString(cl_no));
+			serviceUseDAO.insertWHpicture(whPicture);
+		}
+		
+	}
+	
+	@Override
+	public Map<String, Object> getClientList(SearchMap sm) throws SQLException {
+		List<ClientVO> clientlist = serviceUseDAO.selectSearchClientList(sm);
+		
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(serviceUseDAO.selectClientListCount(sm));
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("clientlist", clientlist);
+		dataMap.put("pageMaker", pageMaker);
+		return dataMap;
+	}
+	
+	@Override
+	public void approveClient(ApproveClient approveClient) throws SQLException {
+		serviceUseDAO.approveClient(approveClient);
+		
+	}
+
+	@Override
+	public DetailMemberCommand getUseClient(String cl_code) throws SQLException {
+		DetailMemberCommand client = serviceUseDAO.selectClientBycl_code(cl_code);
+		return client;
+	}
+	
+	@Override
+	public String findClientId(String cl_regno) throws SQLException {
+		String cl_id = serviceUseDAO.selectClientIdByClRegno(cl_regno);
+		return cl_id;
+	}
+	@Override
+	public ClientVO confirmInformation(BeforeFindPwdCommand clCommand, HttpServletRequest request) throws Exception {
+		ClientVO cl = serviceUseDAO.selectByIdRegnoEmail(clCommand);
+		if(cl!=null) {
+			String authText = authString();
+			SendMail.sendMail("AtoZ 인증번호", cl.getCl_email(), "인증번호 : " + authText);
+			request.getSession().setAttribute("authText", authText);
+		}
+		return cl;
+	}
+	
+	public String authString() {
+		String randomString = UUID.randomUUID().toString().replace("-", "").substring(0,6);
+		return randomString;
+	}
+
+	@Override
+	public void modifyPwd(ChangePwdCommand cpc) throws SQLException {
+		serviceUseDAO.updatePwd(cpc);
+	}
+
+}

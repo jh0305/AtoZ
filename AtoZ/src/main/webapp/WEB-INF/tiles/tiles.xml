@@ -1,0 +1,102 @@
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<tiles-definitions>
+
+	<!-- 홈페이지 -->
+	<definition name="page" template="/WEB-INF/tiles/home_template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/home_header.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/views/include/home_footer.jsp" />
+	</definition>
+	
+	<definition name="*.home" extends="page">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+
+	<definition name="*/*.home" extends="page">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	
+	<definition name="*/*/*.home" extends="page">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+	
+	<!-- 인덱스페이지 -->
+	<definition name="base" template="/WEB-INF/tiles/index_template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/index_header.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/views/include/index_footer.jsp" />
+	</definition>
+	
+	<definition name="*.index" extends="base">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+
+	<definition name="*/*.index" extends="base">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	
+	<definition name="*/*/*.index" extends="base">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+
+
+	<!-- 아이프레임 -->
+	<definition name="frame" template="/WEB-INF/tiles/frame_template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/frame_header.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/views/include/frame_footer.jsp" />
+	</definition>
+
+	<definition name="*.frame" extends="frame">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+
+	<definition name="*/*.frame" extends="frame">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	
+	<definition name="*/*/*.frame" extends="frame">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+	<!-- 팝업 -->
+	<definition name="pop" template="/WEB-INF/tiles/pop_template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/pop_header.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/views/include/pop_footer.jsp" />
+	</definition>
+
+	<definition name="*.pop" extends="pop">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+
+	<definition name="*/*.pop" extends="pop">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	
+	<definition name="*/*/*.pop" extends="pop">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+	<!-- 모바일 -->
+	<definition name="mobile" template="/WEB-INF/tiles/mobile_template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/mobile_header.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/views/include/mobile_footer.jsp" />
+	</definition>
+
+	<definition name="*.mob" extends="mobile">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+
+	<definition name="*/*.mob" extends="mobile">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	
+	<definition name="*/*/*.mob" extends="mobile">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+	
+</tiles-definitions>
+	
+	
+	

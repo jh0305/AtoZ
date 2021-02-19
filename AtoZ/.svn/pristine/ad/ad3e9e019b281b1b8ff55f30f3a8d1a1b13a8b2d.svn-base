@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Receive-Mapper">
+	
+	
+	<select id="selectSearchReceiveReqList" parameterType="hashMap" resultType="receive">
+		SELECT *
+		FROM
+			(SELECT ord_no, (SELECT SUM(qty) FROM order_item WHERE ord_no = in_order.ord_no) qty, (SELECT COUNT(oi_no) FROM order_item WHERE ord_no = in_order.ord_no) cnt, (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item WHERE ord_no = in_order.ord_no) AND co_code = in_order.co_code ) item_name, (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name, (SELECT cl_name FROM client WHERE cl_code = in_order.wh_code) wh_name, wh_code,co_code, pay_no, req_ymd, deli_ymd, ord_dsc, ord_mngr, wh_mngr, in_ymd, sts_code, in_chrg, upd_name, upd_ymd 
+			FROM in_order)
+		WHERE 
+			<if test="mode == 'CO'.toString()">
+				co_code = #{cl_code}
+				AND wh_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code = #{cl_code}
+				AND co_name LIKE '%'||#{cl_name}||'%'
+			</if>
+		 AND sts_code = 'PR001' AND item_name LIKE '%'||#{item_name}||'%' AND deli_ymd BETWEEN TO_DATE(#{s_deli_ymd},'yyyymmdd') AND TO_DATE(#{d_deli_ymd},'yyyymmdd') AND req_ymd BETWEEN TO_DATE(#{s_req_ymd},'yyyymmdd') AND TO_DATE(#{d_req_ymd},'yyyymmdd')
+		ORDER BY req_ymd DESC
+	</select>
+	
+	<select id="selectReceiveListReqCount" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+		FROM
+			(SELECT ord_no, (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item) AND co_code = in_order.co_code ) item_name, (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name, (SELECT cl_name FROM client WHERE cl_code = in_order.wh_code) wh_name, wh_code,co_code, pay_no, req_ymd, deli_ymd, ord_dsc, ord_mngr, wh_mngr, in_ymd, sts_code, in_chrg, upd_name, upd_ymd 
+			FROM in_order)
+		WHERE
+			<if test="mode == 'CO'.toString()">
+				co_code = #{cl_code}
+				AND wh_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code = #{cl_code}
+				AND co_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			 AND sts_code = 'PR001' AND item_name LIKE '%'||#{item_name}||'%' AND deli_ymd BETWEEN TO_DATE(#{s_deli_ymd},'yyyymmdd') AND TO_DATE(#{d_deli_ymd},'yyyymmdd') AND req_ymd BETWEEN TO_DATE(#{s_req_ymd},'yyyymmdd') AND TO_DATE(#{d_req_ymd},'yyyymmdd')
+	</select>
+	
+	<select id="selectSearchReceivePlanList" parameterType="hashMap" resultType="receive">
+		SELECT *
+		FROM
+			(SELECT ord_no, (SELECT SUM(qty) FROM order_item WHERE ord_no = in_order.ord_no) qty, (SELECT COUNT(oi_no) FROM order_item WHERE ord_no = in_order.ord_no) cnt, (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item WHERE ord_no = in_order.ord_no) AND co_code = in_order.co_code ) item_name, (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name, (SELECT cl_name FROM client WHERE cl_code = in_order.wh_code) wh_name, wh_code,co_code, pay_no, req_ymd, deli_ymd, ord_dsc, ord_mngr, (SELECT emp_name FROM wh_emp WHERE emp_id = wh_mngr) emp_name, wh_mngr, in_ymd, sts_code, in_chrg, upd_name, upd_ymd 
+			FROM in_order)
+		WHERE 
+			<if test="mode == 'CO'.toString()">
+				co_code = #{cl_code}
+				AND wh_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code = #{cl_code}
+				AND co_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			 AND sts_code = 'PR002' AND item_name LIKE '%'||#{item_name}||'%' AND deli_ymd BETWEEN TO_DATE(#{s_deli_ymd},'yyyymmdd') AND TO_DATE(#{d_deli_ymd},'yyyymmdd') AND req_ymd BETWEEN TO_DATE(#{s_req_ymd},'yyyymmdd') AND TO_DATE(#{d_req_ymd},'yyyymmdd')
+		ORDER BY deli_ymd DESC
+	</select>
+	
+	<select id="selectReceiveListPlanCount" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+		FROM
+			(SELECT ord_no, (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item) AND co_code = in_order.co_code ) item_name, (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name, (SELECT cl_name FROM client WHERE cl_code = in_order.wh_code) wh_name, wh_code,co_code, pay_no, req_ymd, deli_ymd, ord_dsc, ord_mngr, wh_mngr, in_ymd, sts_code, in_chrg, upd_name, upd_ymd 
+			FROM in_order)
+		WHERE
+			<if test="mode == 'CO'.toString()">
+				co_code = #{cl_code}
+				AND wh_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code = #{cl_code}
+				AND co_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			 AND sts_code = 'PR002' AND item_name LIKE '%'||#{item_name}||'%' AND deli_ymd BETWEEN TO_DATE(#{s_deli_ymd},'yyyymmdd') AND TO_DATE(#{d_deli_ymd},'yyyymmdd') AND req_ymd BETWEEN TO_DATE(#{s_req_ymd},'yyyymmdd') AND TO_DATE(#{d_req_ymd},'yyyymmdd')
+	</select>
+	
+	<select id="selectSearchReceiveComplList" parameterType="hashMap" resultType="receive">
+		SELECT *
+		FROM
+			(SELECT ord_no, (SELECT SUM(qty) FROM order_item WHERE ord_no = in_order.ord_no) qty, (SELECT SUM(in_qty) FROM order_item WHERE ord_no = in_order.ord_no) in_qty, (SELECT COUNT(oi_no) FROM order_item WHERE ord_no = in_order.ord_no) cnt, (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item WHERE ord_no = in_order.ord_no) AND co_code = in_order.co_code ) item_name, (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name, (SELECT cl_name FROM client WHERE cl_code = in_order.wh_code) wh_name, wh_code,co_code, pay_no, req_ymd, deli_ymd, ord_dsc, ord_mngr, (SELECT emp_name FROM wh_emp WHERE emp_id = wh_mngr) emp_name, wh_mngr, in_ymd, sts_code, in_chrg, upd_name, upd_ymd 
+			FROM in_order)
+		WHERE 
+			<if test="mode == 'CO'.toString()">
+				co_code = #{cl_code}
+				AND wh_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code = #{cl_code}
+				AND co_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			 AND sts_code = 'PR004' AND item_name LIKE '%'||#{item_name}||'%' AND deli_ymd BETWEEN TO_DATE(#{s_deli_ymd},'yyyymmdd') AND TO_DATE(#{d_deli_ymd},'yyyymmdd') AND req_ymd BETWEEN TO_DATE(#{s_req_ymd},'yyyymmdd') AND TO_DATE(#{d_req_ymd},'yyyymmdd') AND in_ymd BETWEEN TO_DATE(#{s_in_ymd},'yyyymmdd') AND TO_DATE(#{d_in_ymd},'yyyymmdd')
+		ORDER BY in_ymd DESC
+	</select>
+	
+	<select id="selectReceiveListComplCount" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+		FROM
+			(SELECT ord_no, (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item) AND co_code = in_order.co_code ) item_name, (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name, (SELECT cl_name FROM client WHERE cl_code = in_order.wh_code) wh_name, wh_code,co_code, pay_no, req_ymd, deli_ymd, ord_dsc, ord_mngr, wh_mngr, in_ymd, sts_code, in_chrg, upd_name, upd_ymd 
+			FROM in_order)
+		WHERE 
+			<if test="mode == 'CO'.toString()">
+				co_code = #{cl_code}
+				AND wh_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code = #{cl_code}
+				AND co_name LIKE '%'||#{cl_name}||'%'
+			</if>
+			 AND sts_code = 'PR004' AND item_name LIKE '%'||#{item_name}||'%' AND deli_ymd BETWEEN TO_DATE(#{s_deli_ymd},'yyyymmdd') AND TO_DATE(#{d_deli_ymd},'yyyymmdd') AND req_ymd BETWEEN TO_DATE(#{s_req_ymd},'yyyymmdd') AND TO_DATE(#{d_req_ymd},'yyyymmdd') AND in_ymd BETWEEN TO_DATE(#{s_in_ymd},'yyyymmdd') AND TO_DATE(#{d_in_ymd},'yyyymmdd')
+	</select>
+	
+	<update id="updateManager" parameterType="hashMap">
+			UPDATE in_order SET wh_mngr = #{wh_mngr}
+			WHERE ord_no = #{ord_no}
+	</update>
+	
+	<select id="selectEmployeeList" parameterType="hashMap" resultType="com.spring.AtoZ.vo.EmployeeVO">
+		SELECT *
+		FROM wh_emp
+		WHERE (emp_id LIKE '%'||#{keyword}||'%' OR emp_name LIKE '%'||#{keyword}||'%') AND wh_code = #{cl_code}
+			<choose>
+				<when test="emp_job == 'default'.toString()">
+				</when>
+				<otherwise>
+					 AND emp_job = #{emp_job}
+				</otherwise>
+			</choose>
+	</select>
+	<select id="selectEmployeeListCount" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+		FROM wh_emp
+		WHERE (emp_id LIKE '%'||#{keyword}||'%' OR emp_name LIKE '%'||#{keyword}||'%') AND wh_code = #{cl_code}
+			<choose>
+				<when test="emp_job == 'default'.toString()">
+				</when>
+				<otherwise>
+					 AND emp_job = #{emp_job}
+				</otherwise>
+			</choose>
+	</select>
+	
+	<select id="selectOrderItemList" resultType="com.spring.AtoZ.vo.OrderItemVO">
+		SELECT oi_no, ord_no, qty, in_qty, item.item_no, item.co_code, item.sts_code, item.item_name, (SELECT std_name FROM standard WHERE std_no = item.std_no) std_name,(SELECT cm_name FROM cm_code WHERE cm_code = item.gb_code) gb_name, (SELECT cm_name FROM cm_code WHERE cm_code = item.gr_code) gr_name
+		FROM order_item, item
+		WHERE order_item.item_no = item.item_no AND ord_no = #{ord_no}
+	</select>
+	
+	<update id="updateDecision" parameterType="HashMap">
+		UPDATE in_order SET sts_code = #{decision}
+		WHERE ord_no IN 
+		<foreach collection="arr" item="item" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+	<select id="selectTodayReceiveList" resultType="receive">
+		SELECT ord_no, co_code, wh_code
+		FROM in_order
+		WHERE deli_ymd = TO_CHAR(SYSDATE,'YYYYMMDD') AND sts_code IN ('PR002','PR003')
+	</select>
+	
+	<select id="selectTodayReceiveListByCode" resultType="receive">
+		SELECT *
+		FROM
+			(SELECT ord_no, (SELECT SUM(qty) FROM order_item WHERE ord_no = in_order.ord_no) qty, (SELECT COUNT(oi_no) FROM order_item WHERE ord_no = in_order.ord_no) cnt, (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item) AND co_code = in_order.co_code ) item_name, (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name, (SELECT cl_name FROM client WHERE cl_code = in_order.wh_code) wh_name, wh_code,co_code, pay_no, req_ymd, deli_ymd, ord_dsc, ord_mngr, wh_mngr,
+			(SELECT emp_name FROM wh_emp WHERE emp_id = in_order.wh_mngr) emp_name, in_ymd, sts_code, in_chrg, upd_name, upd_ymd 
+			FROM in_order)
+		WHERE deli_ymd = TO_CHAR(SYSDATE,'YYYYMMDD') AND sts_code IN ('PR002','PR003') AND wh_code = #{wh_code}
+	</select>
+	
+	<select id="selectTempStockList" resultType="com.spring.AtoZ.strategy.dto.StrategyStockCommand">
+		SELECT inv_no, inv_loc, i.type_code cm_code,
+				(SELECT SUBSTR(SYS_CONNECT_BY_PATH(wz_loc, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(wz_loc, '-')) ) loc_root
+         			FROM wh_zone
+         			WHERE wz_no = SUBSTR(inv_loc,0,INSTR(inv_loc ,'-')-1)
+         			START WITH up_no IS NULL
+         			CONNECT BY PRIOR wz_no = up_no)||SUBSTR(inv_loc,INSTR(inv_loc,'-'),LENGTH(inv_loc)) inv_name,
+				inv.wh_code, inv_qty, inv.sts_code, oi_no,
+        		i.item_name,
+        		(SELECT std_name FROM standard WHERE std_no = i.std_no) std_name,
+        		(SELECT cm_name FROM cm_code WHERE cm_code = i.type_code) type_code,
+        		(SELECT cm_name FROM cm_code WHERE cm_code = i.gr_code) gr_code,
+        		(SELECT item_rank FROM item_rank WHERE item_no = i.item_no AND co_code = i.co_code AND wh_code = inv.wh_code) item_rank
+		FROM inventory inv, item i
+		WHERE oi_no IN ( (SELECT oi_no FROM order_item WHERE ord_no = #{ord_no}) ) AND i.item_no = inv.item_no AND i.co_code = inv.co_code
+		ORDER BY inv_no
+	</select>
+	
+	<select id="selectTempItemList" resultType="com.spring.AtoZ.strategy.dto.StrategyStockCommand">
+		SELECT 
+				qty inv_qty, oi_no inv_no, i.type_code cm_code,
+        		i.item_name,
+        		(SELECT std_name FROM standard WHERE std_no = i.std_no) std_name,
+        		(SELECT cm_name FROM cm_code WHERE cm_code = i.type_code) type_code,
+        		(SELECT cm_name FROM cm_code WHERE cm_code = i.gr_code) gr_code,
+        		(SELECT item_rank FROM item_rank WHERE item_no = i.item_no AND co_code = i.co_code AND wh_code = (SELECT wh_code FROM in_order WHERE ord_no = #{ord_no})) item_rank
+		FROM order_item o, item i
+		WHERE ord_no = #{ord_no} AND i.item_no = o.item_no AND i.co_code = o.co_code
+		ORDER BY oi_no
+	</select>
+	
+	<select id="selectOrderSts" resultType="String">
+		SELECT sts_code
+		FROM in_order
+		WHERE ord_no = #{ord_no}
+	</select>
+	
+	<select id="selectZoneByCode" resultType="String" parameterType="hashMap">
+		SELECT wz_no
+		FROM wh_zone
+		WHERE co_code = #{co_code} AND wh_code = #{wh_code} AND cm_code = #{cm_code}
+	</select>
+	
+	<select id="selectDongFloor" parameterType="str" resultType="com.spring.AtoZ.vo.DongFloorVO">
+		SELECT DONG_NAME, FLOOR_NAME, DF_WIDTH, DF_LNGTH, DF_AREA 
+		FROM DONG_FLOOR 
+		WHERE WH_CODE = #{whCode}
+		ORDER BY DONG_NAME
+	</select>
+	
+	<update id="updateInvLoc" parameterType="hashMap">
+		UPDATE inventory
+		SET inv_qty = #{inv_qty}, inv_loc = #{inv_loc}
+		WHERE inv_no = #{inv_no}
+	</update>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

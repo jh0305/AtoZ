@@ -1,0 +1,57 @@
+package com.spring.AtoZ.item.dao;
+
+import java.sql.SQLException;
+import java.util.List;
+
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.item.dto.CooperatorNameCheckCommand;
+import com.spring.AtoZ.item.dto.ItemCommand;
+import com.spring.AtoZ.item.dto.ItemDetailCommand;
+import com.spring.AtoZ.item.dto.ItemRegistCommand;
+import com.spring.AtoZ.item.dto.StandardCodeCheckCommand;
+import com.spring.AtoZ.item.dto.StandardNameCheckCommand;
+import com.spring.AtoZ.item.dto.UpdateStandardCommand;
+import com.spring.AtoZ.vo.CooperatorVO;
+import com.spring.AtoZ.vo.StandardVO;
+
+public interface ItemDAO {
+	List<ItemCommand> selectSearchItemList(SearchMap sm) throws SQLException;
+	
+	int selectItemListCount(SearchMap sm) throws SQLException;
+	
+	ItemCommand selectItemDetail(ItemDetailCommand idc) throws SQLException;
+	
+	String selectstdcode(StandardCodeCheckCommand sccc) throws SQLException;
+	
+	int selectStandardSequenceNextValue() throws SQLException;
+	
+	void insertStandard(StandardVO standard) throws SQLException;
+	
+	List<StandardVO> selectStandardList(SearchMap sm) throws SQLException;
+	
+	int selectStandardListCount(SearchMap sm) throws SQLException;
+	
+	StandardVO selectStandardByStdNo(int std_no) throws SQLException;
+	
+	void updateStandard(UpdateStandardCommand usc) throws SQLException;
+	
+	void deleteStandard(int std_no) throws SQLException;
+	
+	List<CooperatorVO> selectCooperatorList(SearchMap sm) throws SQLException;
+	
+	int selectCooperatorListCount(SearchMap sm) throws SQLException;
+	
+	int selectItemSequenceNextValue() throws SQLException;
+	
+	void insertItem(ItemRegistCommand irc) throws SQLException;
+	
+	void insertItem2(ItemRegistCommand irc) throws SQLException;
+	
+	void updateItem(ItemRegistCommand irc) throws SQLException;
+	
+	void deleteItem(int item_no) throws SQLException;
+	
+	StandardVO selectStandard(StandardNameCheckCommand sncc) throws SQLException;
+	
+	CooperatorVO selectCooperator(String cp_name) throws SQLException;
+}

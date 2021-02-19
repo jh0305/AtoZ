@@ -1,0 +1,148 @@
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="Release-Mapper">
+	
+	<sql id="search">
+		<if test="searchType == 'dst_name'.toString()">
+			and (select cl_name from client where client.cl_code = release.dst_code) like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'emp_name'.toString()">
+			and (select emp_name from wh_emp where release.emp_id = wh_emp.emp_id) like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	
+	<sql id="employeeSearch">
+		<if test="searchType == 'emp_name'.toString()">
+			and (select emp_name from wh_emp where release.emp_id = wh_emp.emp_id) like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'emp_id'.toString()">
+			and (select emp_id from wh_emp where release.emp_id = wh_emp.emp_id) like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	<select id="selectSearchReleaseExpectedList" parameterType="hashMap" resultType="com.spring.AtoZ.release.dto.ExpectedRelease">
+	SELECT rls_no, (select sum(plan_qty) pc from rls_item where rls_no = release.rls_no) plan_qty,
+	(SELECT cl_name FROM client WHERE cl_code = release.co_code) co_name, (SELECT cl_name FROM client WHERE cl_code = release.wh_code) wh_name,
+    (SELECT cl_code FROM client WHERE cl_code = release.co_code) co_code, wh_code,
+    (SELECT emp_name FROM wh_emp WHERE emp_id = release.emp_id) emp_name, plan_ymd, task_code, dst_addr, sts_code
+    FROM release
+	where 
+			<if test="mode == 'CO'.toString()">
+				co_code=#{cl_code}
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code=#{cl_code}
+			</if>
+			<include refid="search"/>
+	order by RLS_NO DESC	  
+	</select>
+	
+	<select id="selectSearchReleaseExpectedCount" parameterType="hashMap" resultType="int">
+	SELECT count(*)
+	FROM release
+	where 
+			<if test="mode == 'CO'.toString()">
+				co_code=#{cl_code}
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code=#{cl_code}
+			</if>
+			<include refid="search"/>
+	order by plan_ymd DESC	  
+	</select>
+	
+	<select id="selectReleaseRequest" parameterType="int" resultType="com.spring.AtoZ.release.dto.ReleaseRequestDetails">
+		select rls_item.rls_no rls_no, (SELECT cl_name FROM client WHERE cl_code = rls_item.co_code) co_name, plan_qty, item_no, (select item_name from item where rls_item.item_no = item.item_no) item_name
+		FROM rls_item, release
+		where rls_item.rls_no = release.rls_no and rls_item.rls_no=#{rls_no}
+	</select>
+	
+	<select id="selectEmployeeList" parameterType="hashMap" resultType="emp">
+		SELECT *
+		FROM wh_emp
+		WHERE (emp_id LIKE '%'||#{keyword}||'%' OR emp_name LIKE '%'||#{keyword}||'%') AND wh_code = #{cl_code}
+			<choose>
+				<when test="emp_job == 'default'.toString()">
+				</when>
+				<otherwise>
+					 AND emp_job = #{emp_job}
+				</otherwise>
+			</choose>
+			<include refid="employeeSearch"/>
+	</select>
+	
+	<select id="selectEmployeeListCount" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*)
+		FROM wh_emp
+		WHERE (emp_id LIKE '%'||#{keyword}||'%' OR emp_name LIKE '%'||#{keyword}||'%') AND wh_code = #{cl_code}
+			<choose>
+				<when test="emp_job == 'default'.toString()">
+				</when>
+				<otherwise>
+					 AND emp_job = #{emp_job}
+				</otherwise>
+			</choose>
+	</select>
+	<update id="insertApproveRelease" parameterType="com.spring.AtoZ.release.dto.ApproveRelease">
+		update release set
+		plan_ymd =#{plan_ymd}, emp_id =#{emp_id}, sts_code ='PR005', task_code ='RL001' WHERE rls_no =#{rls_no}
+	</update>
+	
+	<update id="insertRejectRelease" parameterType="com.spring.AtoZ.release.dto.RejectRelease">
+		update release set
+		sts_code ='PT002' WHERE rls_no = #{rls_no}
+	</update>
+	<select id="selectWareList" parameterType="hashMap" resultType="client">
+		SELECT cl_code, cl_name
+		FROM
+		    (SELECT cl_code, cl_name
+		     FROM client
+		     WHERE sts_code = 'CR002' and cl_code IN (SELECT wh_code
+		                                              FROM c2c_contract
+		                                              WHERE co_code = #{coCode} and sts_code = 'CR002'))
+		WHERE cl_code LIKE '%'||#{searchData}||'%' or cl_name LIKE '%'||#{searchData}||'%'
+	</select>
+	
+	<select id="selectCompleteReleaseList" parameterType="str" resultType="com.spring.AtoZ.release.dto.CompleteReleaseListCommand">
+		select release.*,
+			(select cl_name from client where client.cl_code = release.dst_code) dst_name,
+	        (select emp_name from wh_emp where release.emp_id = wh_emp.emp_id) emp_name,
+	        (select cl_name from client where cl_code=wh_code) wh_name,
+	        (select sum(rls_qty) from rls_item where rls_item.rls_no = RELEASE.RLS_NO) all_rls_qty
+		from release
+		where 
+			<if test="mode == 'CO'.toString()">
+				co_code=#{cl_code}
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code=#{cl_code}
+			</if>
+			and task_code = 'RL003'
+			<include refid="search"/>
+		order by rls_ymd desc
+	</select>
+	
+	<select id="selectCompleteReleaseListCount" parameterType="str" resultType="int">
+		select count(*)
+		from release
+		where 
+			<if test="mode == 'CO'.toString()">
+				co_code=#{cl_code}
+			</if>
+			<if test="mode == 'WH'.toString()">
+				wh_code=#{cl_code}
+			</if>
+			and task_code = 'RL003'
+			<include refid="search"/>
+		order by rls_ymd desc
+	</select>
+	
+	<select id="selectCompleteReleaseDetail" resultType="com.spring.AtoZ.release.dto.CompleteReleaseDetailCommand" parameterType="int">
+		select rls_item.*,
+        	(select item_name from item where item.item_no=rls_item.item_no) item_name,
+        	(select std_name from standard where standard.std_no=(select std_no from item where item.item_no=rls_item.item_no)) std_name
+		from rls_item
+		where rls_no=#{rls_no}
+	</select>
+</mapper>

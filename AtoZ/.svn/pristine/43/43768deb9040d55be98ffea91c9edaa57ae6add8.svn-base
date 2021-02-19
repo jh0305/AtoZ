@@ -1,0 +1,192 @@
+package com.spring.AtoZ.contract.controller;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spring.AtoZ.common.dto.PageMaker;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.contract.dao.ContractDAO;
+import com.spring.AtoZ.contract.dto.SendContractCommand;
+import com.spring.AtoZ.contract.service.ContractService;
+import com.spring.AtoZ.member.dto.DetailMemberCommand;
+import com.spring.AtoZ.member.service.MemberService;
+import com.spring.AtoZ.vo.C2CConctractVO;
+import com.spring.AtoZ.vo.ClientVO;
+import com.spring.AtoZ.vo.DetailMngVO;
+import com.spring.AtoZ.vo.ZoneVO;
+
+@RestController
+public class RestContractController {
+	
+	@Autowired
+	public ContractService service;
+
+	@Autowired
+	public ContractDAO dao;
+	
+	@Autowired
+	public MemberService memberService;
+	
+	@RequestMapping(value="contract/getDetail", produces="text/plain;charset=UTF-8")
+	public String getWhsDetail(String wh_code, ModelAndView mnv) throws SQLException, JsonProcessingException{
+		// wz_no에 없는 애들만 
+		Map<String, Object> result = service.getWhsDetail(wh_code);
+		ObjectMapper mapper = new ObjectMapper();		
+		String resultData = mapper.writeValueAsString(result); 
+		return resultData;
+	}
+	
+	@RequestMapping(value="contract/sendContract", method=RequestMethod.POST)
+	public void sendContract(@RequestBody SendContractCommand cmd, HttpSession session) throws SQLException, JsonParseException, JsonMappingException, IOException{
+		ClientVO vo = (ClientVO)session.getAttribute("loginUser");
+		String co_code = vo.getCl_code();
+		SendContractCommand newcmd = cmd;
+		cmd.setCo_code(co_code); 
+		service.requestContract(newcmd);
+	}
+	
+	@RequestMapping(value="contract/tabList")
+	public Map<String, Object> getTabList(ModelAndView mnv, SearchMap sm, @RequestParam(defaultValue="") String searchType, 
+			@RequestParam(defaultValue="") String keyword,
+			@RequestParam(defaultValue="") String cm_code,
+			HttpSession session) throws SQLException, JsonProcessingException{
+		ClientVO vo = (ClientVO)session.getAttribute("loginUser");
+		String cl_code = vo.getCl_code();
+		
+		if(cl_code.indexOf('W') == 0) {
+			sm.put("wh_code",cl_code);
+		}else {
+			sm.put("co_code", cl_code);
+		}
+		sm.put("searchType", searchType);
+		sm.put("keyword", keyword);
+		
+		sm.put("cm_code", cm_code);
+		sm.setUrl("/WH/contract/whs");		
+		Map<String, Object> result = service.getContractList(sm);
+		PageMaker pm = (PageMaker) result.get("pageMaker");
+		return result;
+	}
+	
+	@RequestMapping(value="contract/getConDetail")
+	public Map<String,Object> getContractDetail(int cc_no, HttpSession session) throws SQLException{
+		
+		ClientVO vo = (ClientVO)session.getAttribute("loginUser");
+		String cl_code = vo.getCl_code();
+		Map<String, Object> map = new HashMap<String, Object>();
+		if(cl_code.indexOf('W') == 0) {
+			map.put("wh_code",cl_code);
+		}else {
+			map.put("co_code", cl_code);
+		}
+		map.put("cc_no", cc_no);
+		Map<String,Object> result = service.getContractDetail(map); 
+		return result;
+	}
+
+	@RequestMapping(value="contract/getReqList")
+	public Map<String, Object> getRequestContractList(SearchMap sm, 
+			HttpSession session,
+			@RequestParam(defaultValue="") String searchType, 
+			@RequestParam(defaultValue="") String keyword) throws SQLException{
+		
+		ClientVO vo = (ClientVO)session.getAttribute("loginUser");
+		String cl_code = vo.getCl_code();		
+		if(cl_code.indexOf('W') == 0) {
+			sm.put("wh_code",cl_code);
+		}else {
+			sm.put("co_code", cl_code);
+		}
+		sm.put("searchType", searchType);
+		sm.put("keyword", keyword);
+		sm.put("cm_code", "CR001");
+		Map<String, Object> result = service.getReqContractList(sm);
+		return result; 
+	}
+	
+	@RequestMapping(value="contract/getArea")
+	public List<ZoneVO> getArea(String cm_code, String wh_code,  @RequestParam(defaultValue="", value="wznos[]") List<Integer> wznos) throws SQLException{
+		
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("wh_code", wh_code);
+		params.put("cm_code", cm_code);
+		params.put("wz_nos", wznos);
+		List<ZoneVO> result = service.getWhsDetailArea(params);
+		return result;
+	}
+	@RequestMapping(value="contract/sendContractFromWhs")
+	public void sendContract(@RequestParam(defaultValue="N/A") String dm_content, int mnth_chrg, int cc_no, HttpSession session) throws SQLException{
+		ClientVO vo = (ClientVO)session.getAttribute("loginUser");
+		String wh_code = vo.getCl_code();
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("dm_content", dm_content);
+		params.put("cc_no", cc_no);
+		params.put("wh_code", wh_code);
+		params.put("mnth_chrg", mnth_chrg);
+		service.sendContractFromWhs(params);
+	}
+	
+	@RequestMapping(value="contract/modifyContractFromWhs")
+	public void modifyContractFromWhs(@RequestParam(defaultValue="N/A") String dm_content, int mnth_chrg, int cc_no, int dm_no, HttpSession session) throws SQLException{
+		ClientVO vo = (ClientVO)session.getAttribute("loginUser");
+		String wh_code = vo.getCl_code();
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("dm_content", dm_content);
+		params.put("cc_no", cc_no);
+		params.put("wh_code", wh_code);
+		params.put("mnth_chrg", mnth_chrg);
+		params.put("dm_no", dm_no);
+		service.modifyContractFromWhs(params);
+	}
+	
+	@RequestMapping(value="contract/requestContract", method=RequestMethod.POST)
+	public void requestContractFromCo(@RequestBody DetailMngVO dmvo, HttpSession session) throws SQLException{
+		DetailMngVO param = dmvo;
+		ClientVO vo = (ClientVO)session.getAttribute("loginUser");
+		String cl_code = vo.getCl_code();
+		dmvo.setCl_code(cl_code);
+		dao.insertDetailMng(param);
+	}
+	
+	@RequestMapping(value="contract/registContract", method=RequestMethod.POST)
+	public void registContract(@RequestBody C2CConctractVO ccvo) throws SQLException{
+		service.manageContract(ccvo);
+	}
+	@RequestMapping(value="contract/cancleContract", method=RequestMethod.POST)
+	public void cancleContract(@RequestBody Map<String, Object> params) throws SQLException{
+		service.cancleContract(params);
+	}
+	@RequestMapping("/contract/companyDetail")
+	@ResponseBody
+	public ResponseEntity<DetailMemberCommand> companyDetail(String cl_code) throws Exception {
+		DetailMemberCommand client = memberService.getClient(cl_code);
+		return new ResponseEntity<DetailMemberCommand>(client,HttpStatus.OK);
+	}
+	
+	@RequestMapping("/contract/getPicture")
+	public List<String> getPictureNames(String wh_code) throws SQLException{
+		return dao.getWhsPictures(wh_code); 
+	}
+	
+	
+}

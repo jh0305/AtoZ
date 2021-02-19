@@ -1,0 +1,191 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+
+<style>
+	.form-check-input{
+		cursor: pointer;
+	}
+	.list_tr:hover{
+		background : rgb(241,244,249);
+	}
+	.list_tr{
+		cursor: pointer;
+	}
+	.content{
+		overflow: hidden;
+	}
+</style>
+
+
+	<div class="page-header d-print-none" style="margin-left: 10px;">
+		<div class="row align-items-center">
+			<div class="col">
+				<h2 class="page-title">발주 현황 조회</h2>
+			</div>
+		</div>
+	</div>
+	
+	<div class="card" style="margin: 0px 10px; padding: 10px;height: 810px; min-width: 1643px;">
+		<div class="row" style="margin: 0px; padding: 0px; min-width: 1248px;">
+			<div class="col-6" style="padding: 0px; display: inline-block;">
+				<div class="row" style="padding: 0px 10px; margin-bottom: 10px;">
+					<div class="col-12" style="padding: 0px;">
+						<div class="row" style="padding: 0px 10px;">
+							<div class="col-1" style="padding: 0px; display: inline-block; height: 36px; line-height: 36px;">발주일자</div>
+							<div class="col-5" style="display: inline-block;">
+								<div class="input-icon">
+	                          	  <input onchange="goOrderListSearch();" id="req_ymd" type="date" value="" class="form-control" placeholder="Select a date">
+	                            </div>
+							</div>
+							<div class="col-5" style="display: inline-block;">
+								<div class="input-icon">
+	                          	  <input onchange="goOrderListSearch();" id="req_ymd_after" type="date" value="" class="form-control" placeholder="Select a date">
+	                          </div>
+							</div>
+						</div>
+					</div>
+				</div>
+	
+				<div class="row" style="padding: 0px; margin: 0px 0px 10px 0px;">
+					<div class="col-12" style="padding: 0px;">
+						<div class="row" style="padding: 0px 10px;">
+							<div class="col-1" style="padding: 0px; display: inline-block; height: 36px; line-height: 36px;">입고창고</div>
+	
+							<div class="col-5" style="height: 36px; display: inline-block;">
+								<div class="col-12" style="padding: 0px 0px;">
+									<div class="row" style="margin: 0px 0px 5px 0px;">
+										<div style="display: inline-block; height: 36px; padding: 0px 10px 0px 0px;" class="col-10">
+											<div class="col-12">
+												<input onchange="goOrderListSearch();" name="wh_code" id="wh_code_listPage" type="text" class="form-control" placeholder="버튼을 눌러 검색하세요." readonly style="background-color:white; border-radius: 3px;">
+											</div>
+										</div>
+	
+										<div class="col-2" style="display: inline-block; height: 34px; padding: 0px 0px;">
+											<div onclick="open_whSearch(this);" class="col-12 text-center">
+												<div style="border: 1px solid #D1D4D7; border-radius: 3px; background-color: #F3F6FA; cursor: pointer;">
+													<svg style="margin: 7px 0px;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+														stroke-linecap="round" stroke-linejoin="round">
+													<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+													<circle cx="10" cy="10" r="7"></circle>
+													<line x1="21" y1="21" x2="15" y2="15"></line></svg>
+												</div>
+											</div>
+										</div>
+	
+									</div>
+								</div>
+							</div>
+						</div>
+					
+						
+					</div>
+				</div>
+			</div>
+	
+			<div class="col-6" style="margin: 0px 0px 0px 0px; padding: 0px; display: inline-block;">
+				<div class="row" style="padding: 0px; margin-bottom: 10px;">
+					<div class="col-12" style="padding: 0px;">
+						<div class="row" style="padding: 0px 10px;">
+							<div class="col-1" style="padding: 0px; display: inline-block; height: 36px; line-height: 36px;">납기일자</div>
+							<div class="col-5" style="display: inline-block;">
+								<div class="input-icon">
+	                          	  <input onchange="goOrderListSearch();" id="deli_ymd" type="date" value="" class="form-control" placeholder="Select a date">
+	                            </div>
+							</div>
+							<div class="col-5" style="display: inline-block;">
+								<div class="input-icon">
+	                          	  <input onchange="goOrderListSearch();" id="deli_ymd_after" type="date" value="" class="form-control" placeholder="Select a date">
+	                          </div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row" style="padding: 0px; margin-bottom: 10px;">
+					<div class="col-1" style="display: inline-block; padding: 0px 0px; height: 36px; line-height: 36px;">담당자명</div>
+					<div class="col-5" style="height: 36px; display: inline-block;">
+						<div class="col-12" style="padding: 0px 0px;">
+							<div class="row" style="margin: 0px 0px 5px 0px;">
+								<div style="display: inline-block; height: 36px; padding: 0px;" class="col-12">
+									<div class="col-12">
+										<input onchange="goOrderListSearch();" name="ord_mngr" value="" type="text" class="form-control" placeholder="담장자 이름을 입력하세요." style="border-radius: 3px;">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="col-12" style="min-width: 1248px;">
+			<div class="col-12 card">
+				<div class="table-responsive" style="margin-bottom: 0px; max-height: 625px;">
+					<table class="table table-vcenter card-table"> 
+						<thead class="list_thead">
+							<tr>
+								<th class="col-md-2" style="width: 0.1%; padding: 8px 8px 8px 16px;"><input onclick="goCheck(this);" id="main_check" class="form-check-input m-0 align-middle" type="checkbox" aria-label="Select invoice"></th>
+								<th class="col-md-2 text-center">발주일자</th>
+								<th class="col-md-2 text-center">담당자</th>
+								<th class="col-md-2 text-center">입고창고</th>
+								<th class="col-md-2 text-center">납기일자</th>
+								<th class="col-md-2 text-center">진행상태</th>
+							</tr>
+						</thead>
+						<tbody id="list_tbody">
+							<c:forEach items="${orderList}" var="order">
+								<tr class="list_tr" onclick="open_modify_dialog(this);">
+									<td onclick="event.cancelBubble=true"><input type="hidden" name="ord_no" value="${order.ord_no}" /><input onclick="goCheckCnt();" name="checkReq" class="form-check-input m-0 align-middle" type="checkbox" aria-label="Select invoice"></td>
+									<td name="" class=" text-center">${fn:substring(order.req_ymd,0,4) }-${fn:substring(order.req_ymd,4,6) }-${fn:substring(order.req_ymd,6,8) }</td>
+									<td name="" class=" text-center">${order.ord_mngr}</td>
+									<td style="display: none;">${order.wh_code}</td>
+									<td name="" class=" text-center">${order.wh_name}</td>
+									<td name="" class=" text-center">${fn:substring(order.deli_ymd,0,4) }-${fn:substring(order.deli_ymd,4,6) }-${fn:substring(order.deli_ymd,6,8) }</td>
+									<c:set var="sts_code" value="${order.sts_code}" />
+									<c:choose> 
+									    <c:when test="${sts_code eq 'PR001'}">
+									        <td name="${sts_code}" class="text-center">요청</td>
+									    </c:when>
+									    <c:when test="${sts_code eq 'PR002'}">
+									        <td name="${sts_code}" class="text-center">수락</td>
+									    </c:when>
+									    <c:when test="${sts_code eq 'PR003'}">
+									        <td name="${sts_code}" class="text-center">입고대기</td>
+									    </c:when>
+									    <c:otherwise>
+									        <td name="${sts_code}" class="text-center">입고완료</td>
+									    </c:otherwise>
+									</c:choose>
+								</tr>
+							</c:forEach>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	
+		<div class="row" style="text-align: right;padding: 9px;height: 30px;">
+			<button onclick="openDial($('#registOrder'), 878, 770);today_ymd();" style="position: absolute;text-align: right;width: 50px;height: 35px;margin-right: 10px;bottom: 10px;right: 60px;" class="btn">등록</button>
+			<button onclick="removeOrder();" style="bottom: 10px;position: absolute;text-align: right;width: 50px;height: 35px;float: right;right: 10px;" class="btn">취소</button>
+		</div>
+	</div>
+
+<div id="registOrder" class="dialogDiv" title="신규발주등록" style="padding: 10px 10px 10px 10px;">
+	<%@ include file="regist.jsp"%>
+</div>
+
+<div id="order_modify_dialog" class="dialogDiv" title="요청상세정보" style="padding: 10px 10px 10px 10px;">
+	<%@ include file="modify.jsp"%>
+</div>
+
+<div id="itemSearchDialog" class="dialogDiv" title="품목검색" style="padding: 10px 10px 10px 10px;">
+	<%@ include file="itemSearch.jsp"%>
+</div>
+
+<div id="whSearch" class="dialogDiv" title="창고검색" style="padding: 10px 10px 10px 10px;">
+	<%@ include file="whSearch.jsp"%>
+</div>
+
+
+<%@ include file="/WEB-INF/views/order/list_js.jsp"%>
+<%@ include file="/WEB-INF/views/common/popupDial_js.jsp"%>

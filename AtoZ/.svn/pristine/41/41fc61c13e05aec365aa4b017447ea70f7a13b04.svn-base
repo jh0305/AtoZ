@@ -1,0 +1,276 @@
+package com.spring.AtoZ.mobile.controller;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.spring.AtoZ.mobile.dto.InvCheckCommand;
+import com.spring.AtoZ.mobile.service.MobileService;
+import com.spring.AtoZ.picking.dto.PickingCommand;
+import com.spring.AtoZ.vo.EmployeeVO;
+
+@Controller
+public class MobileController {
+	
+	@Autowired
+	MobileService mobileService;
+
+	@RequestMapping("m.loginForm")
+	public String loginForm() {
+		String url = "mobile/loginForm.pop";
+		return url;
+	}
+	
+	@RequestMapping("m.login")
+	public String login(String id, String pwd, HttpSession session) throws Exception{
+		String url = "mobile/main.mob";
+		mobileService.login(id, pwd, session);
+		return url;
+	}
+	
+	@RequestMapping("m.logout")
+	public String logout(HttpSession session) throws Exception{
+		String url = "mobile/loginForm.pop";
+		session.invalidate();
+		return url;
+	}
+	
+	@RequestMapping("m.main")
+	public String main() {
+		String url = "mobile/main.mob";
+		return url;
+	}
+	
+	@RequestMapping("m.work")
+	public String work() {
+		String url = "mobile/attendence.mob";
+		return url;
+	}
+	
+	@RequestMapping(value="m.enterAndLeave", method=RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<String> enterAndLeave(HttpSession session) throws Exception {
+		ResponseEntity<String> entity = null;
+		
+		EmployeeVO loginUser = (EmployeeVO) session.getAttribute("loginUser");
+		String id = loginUser.getEmp_id();
+		
+		String msg = mobileService.enterAndLeave(id);
+		if (msg == null) {
+			entity = new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
+		} else {
+			entity = new ResponseEntity<String>(msg, HttpStatus.OK);
+		}
+		
+		return entity;
+	}
+	
+	@RequestMapping("m.stockcount")
+	public String stock() {
+		String url = "mobile/stockcount.mob";
+		return url;
+	}
+	
+	@RequestMapping("m.receiveLocation")
+	public String getReceiveLocation() throws Exception{
+		String url = "mobile/receiveLocation.mob";
+		return url;
+	}
+	
+	@RequestMapping("m.receiveForm")
+	public ModelAndView getReceiveForm(String inv_loc, ModelAndView mnv) {
+		
+		mnv.addObject("inv_loc", inv_loc);
+		mnv.setViewName("mobile/receiveForm.mob");
+		
+		return mnv;
+	}
+	
+	@RequestMapping(value="m.receive", method = RequestMethod.POST, produces="application/text; charset=utf-8")
+	@ResponseBody
+	public ResponseEntity<String> receive(HttpSession session, @RequestBody Map<String, Object>[] arr) throws Exception {
+		EmployeeVO emp = (EmployeeVO) session.getAttribute("loginUser");
+		String emp_name = emp.getEmp_name();
+		
+		System.out.println(Arrays.toString(arr));
+		
+		mobileService.modifyReceive(arr, emp_name);
+		
+		return new ResponseEntity<String>("입고처리 되었습니다.", HttpStatus.OK);
+	}
+	
+	@RequestMapping(value="m.receiveItemCheck", method=RequestMethod.GET)
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> getReceiveItem(int inv_no) throws Exception {
+		ResponseEntity<Map<String, Object>> entity;
+		Map<String, Object> dataMap = null;
+		
+		dataMap = mobileService.getReceiveItem(inv_no);
+		entity = new ResponseEntity<Map<String,Object>>(dataMap, HttpStatus.OK);
+		
+		return entity;
+	}
+	
+	@RequestMapping("m.getInfomation")
+	public String receive() {
+		String url = "mobile/getInfomation.mob";
+		return url;
+	}
+	
+	@RequestMapping("m.receiveList")
+	public String getReceiveList() {
+		String url = "mobile/receiveList.mob";
+		return url;
+	}
+	
+	@RequestMapping("m.receiveDetail")
+	public String getReceiveDetail() {
+		String url = "mobile/receiveDetail.mob";
+		return url;
+	}
+	
+	@RequestMapping("m.releaseList")
+	public String getReleaseList() {
+		String url = "mobile/releaseList.mob";
+		return url;
+	}
+	
+	@RequestMapping("m.releaseDetail")
+	public String getReleaseDetail() {
+		String url = "mobile/releaseDetail.mob";
+		return url;
+	}
+	
+	@RequestMapping("m.stockList")
+	public String getStockList() {
+		String url = "mobile/stockList.mob";
+		return url;
+	}
+	
+	//  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹 
+	
+	@RequestMapping(value="m.pickingItemList")
+	@ResponseBody
+	public ResponseEntity<List<PickingCommand>> getItemList(String rls_no) throws SQLException{
+		ResponseEntity<List<PickingCommand>> result = null;
+		
+		try {
+			List<PickingCommand> list = mobileService.getPickingList(rls_no);
+			result = new ResponseEntity<List<PickingCommand>>(list, HttpStatus.OK);
+		} catch (SQLException e) {
+			result = new ResponseEntity<List<PickingCommand>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return result;
+	} 
+	
+	@RequestMapping("m.modifyPickingSts")
+	@ResponseBody
+	public ResponseEntity<String> modifyPickingSts(String inv_no, String rls_no, String sts_code, HttpSession session){
+		ResponseEntity<String> result = null;
+		PickingCommand pick = new PickingCommand();
+		EmployeeVO emp = (EmployeeVO)session.getAttribute("loginUser");
+		pick.setWh_mngr(emp.getEmp_id());
+		pick.setRls_no(rls_no);
+		pick.setSts_code(sts_code);
+		pick.setInv_no(inv_no);
+		int is = 0;
+		try {
+			is = mobileService.modifyPickingSts(pick);
+			if(is == 0) {
+				result = new ResponseEntity<String>(HttpStatus.OK);
+			} else if(is == 1) {
+				result = new ResponseEntity<String>("피킹 대상이 아닙니다.",HttpStatus.BAD_REQUEST);
+			} else if(is == 2) {
+				result = new ResponseEntity<String>("이미 전부 담았습니다.",HttpStatus.BAD_REQUEST);
+			}
+		} catch (SQLException e) {
+			result = new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return result;
+	}
+	
+	@RequestMapping("m.modifyPickingQty")
+	@ResponseBody
+	public ResponseEntity<String> modifyPickingQty(String pik_no, String qty, String sts_code) throws SQLException{
+		ResponseEntity<String> result = null;
+		PickingCommand pik = new PickingCommand();
+		pik.setPik_no(pik_no);
+		pik.setQty(Integer.parseInt(qty));
+		pik.setSts_code(sts_code);
+		mobileService.modifypickingQty(pik);
+		
+		return result;
+	}
+	//  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹 
+
+	// 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사
+		
+	@RequestMapping("m.invCheckList")
+	public ModelAndView getInvCheckPlanList(@RequestParam(defaultValue="96-11")String inv_loc, ModelAndView mnv) throws Exception{
+		String url = "mobile/invCheckList.mob";
+		mnv.addObject("inv_loc", inv_loc);
+		mnv.setViewName(url);
+		return mnv;
+	}
+	
+	@RequestMapping("m.getStockList")
+	@ResponseBody
+	public ResponseEntity<List<InvCheckCommand>> getStockInRack(String inv_loc) throws Exception{
+		// qr코드로 찍은 랙번호 안에 있는 모든 재고정보를 가져온다. // 여기서 wz_no는 랙-단열
+		// 해당 재고 정보로 실사 테이블을 조회, 데이터가 없으면 인서트, 있으면 실사테이블로 리스트 생성
+		ResponseEntity<List<InvCheckCommand>> result = null;
+		
+		List<InvCheckCommand> list = mobileService.getStockInRack(inv_loc);
+		result = new ResponseEntity<List<InvCheckCommand>>(list, HttpStatus.OK);
+		
+		return result;
+		
+	}
+	
+	@RequestMapping("m.getStock")
+	@ResponseBody
+	public ResponseEntity<InvCheckCommand> getStock(String inv_no) throws Exception{
+		// qr코드로 찍은 랙번호 안에 있는 모든 재고정보를 가져온다. // 여기서 wz_no는 랙-단열
+		// 해당 재고 정보로 실사 테이블을 조회, 데이터가 없으면 인서트, 있으면 실사테이블로 리스트 생성
+		ResponseEntity<InvCheckCommand> result = null;
+		
+		InvCheckCommand comm = mobileService.getStock(inv_no);
+		if(comm == null || comm.getInv_no()==0) {
+			result = new ResponseEntity<InvCheckCommand>(HttpStatus.BAD_REQUEST);
+		} else {
+			result = new ResponseEntity<InvCheckCommand>(comm, HttpStatus.OK);
+		}
+		
+		return result;
+		
+	}
+	
+	@RequestMapping(value="m.modifyInvCheck", method=RequestMethod.POST)
+	@ResponseBody
+	public void setInvCheck(@RequestBody InvCheckCommand[] arr, HttpSession session) throws Exception{
+		// 저장 버튼을 누르면 실행, 실사 정보들을 전부 저장한다.
+		// 해당 inv_no 이면서 bfr_loc 가 wz_no인게 없으면 인서트 있으면 업데이트 // 여기서 wz_no는 랙-단열
+		String reg_name = ((EmployeeVO)session.getAttribute("loginUser")).getEmp_name();
+		mobileService.setInvCheck(arr, reg_name); // 해당 실사 정보가 있는지 체크
+		
+	}
+	
+	
+	// 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사
+}

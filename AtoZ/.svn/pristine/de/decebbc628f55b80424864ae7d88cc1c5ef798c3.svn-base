@@ -1,0 +1,213 @@
+package com.spring.AtoZ.release.controller;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.release.dto.ApproveRelease;
+import com.spring.AtoZ.release.dto.CompleteReleaseDetailCommand;
+import com.spring.AtoZ.release.dto.InventoryList;
+import com.spring.AtoZ.release.dto.RejectRelease;
+import com.spring.AtoZ.release.dto.ReleaseCom;
+import com.spring.AtoZ.release.service.ReleaseService;
+import com.spring.AtoZ.vo.ClientVO;
+import com.spring.AtoZ.vo.RlsItemVO;
+
+@Controller
+public class ReleaseController {
+	
+	@Autowired
+	private ReleaseService releaseService;
+	
+	@RequestMapping("WC/release/expectedList")
+	public ModelAndView releaseEList(ModelAndView mnv, SearchMap sm, @RequestParam(defaultValue="") String searchType, @RequestParam(defaultValue="") String keyword,HttpSession session) throws SQLException {
+		String url = "release/expectedList.frame";
+		sm.put("cl_code", ((ClientVO)session.getAttribute("loginUser")).getCl_code());
+		sm.put("mode", session.getAttribute("mode"));
+		sm.put("searchType", searchType);
+		sm.put("keyword", keyword);
+		sm.setUrl("/WC/release/expectedList");
+		Map<String, Object> dataMap = releaseService.getReleaseExpectedList(sm);
+		mnv.addAllObjects(dataMap);
+		mnv.setViewName(url);
+		return mnv;
+	}
+	
+	//출고요청 상세화면
+	@RequestMapping(value="WC/release/releaseRequestDetail" , produces="text/plain;charset=UTF-8")
+	@ResponseBody
+	public String WRegist(int rls_no) throws Exception {
+		Map<String, Object> result = releaseService.getReleaseRequest(rls_no);
+		ObjectMapper mapper = new ObjectMapper();
+		String resultData = mapper.writeValueAsString(result);
+		return resultData;
+	}
+	
+	//출고요청승인
+	@RequestMapping(value="WH/release/releaseRequestApprove", method=RequestMethod.GET)
+	@ResponseBody
+	public void WApprove(ApproveRelease approve) throws Exception {
+		releaseService.arroveRequestRelease(approve);
+	}
+	
+	//출고요청거절
+	@RequestMapping(value="WH/release/releaseRequestReject", method=RequestMethod.GET)
+	@ResponseBody
+	public void WReject(RejectRelease reject) throws Exception {
+		releaseService.rejectRequestRelease(reject);
+	}
+	
+	@RequestMapping("WH/release/getEmployeeList")
+	public ResponseEntity<Map<String, Object>> getEmployeeList(SearchMap sm, @RequestParam(defaultValue="") String keyword,
+																			@RequestParam(defaultValue="default") String emp_job,
+																			HttpSession session) throws Exception{
+		ResponseEntity<Map<String, Object>> result = null;
+		ClientVO loginUser = (ClientVO)session.getAttribute("loginUser");
+		sm.put("cl_code", loginUser.getCl_code());
+		sm.put("keyword", keyword);
+		sm.put("emp_job", emp_job);
+		sm.setUrl("WH/release/getEmployeeList");
+		
+		Map<String, Object> dataMap = releaseService.getEmployeeList(sm);
+		result = new ResponseEntity<Map<String, Object>>(dataMap, HttpStatus.OK);
+		
+		return result;
+	}
+	
+	@RequestMapping(value="CO/release/getWareList", method=RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<List<ClientVO>> getContractWH(String searchData, HttpSession session) throws Exception{
+		
+		ResponseEntity<List<ClientVO>> entity = null;
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String coCode = loginUser.getCl_code();
+		
+		map.put("searchData", searchData);
+		map.put("coCode", coCode);
+		
+		try {
+			List<ClientVO> itemList = releaseService.getContractWH_List(map);
+			entity = new ResponseEntity<List<ClientVO>>(itemList,HttpStatus.OK);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			entity = new ResponseEntity<List<ClientVO>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return entity;
+	}
+
+	// 출고요청품목 조회
+	@RequestMapping(value="/CO/release/getSearchReleaseItem", method=RequestMethod.GET)
+	@ResponseBody
+	public ResponseEntity<List<InventoryList>> getSearchReleaseItem(String inputValue, HttpSession session, String wh_code) throws Exception{
+		
+		ResponseEntity<List<InventoryList>> entity = null;
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String coCode = loginUser.getCl_code();
+		map.put("inputValue", inputValue);
+		map.put("coCode", coCode);
+		map.put("wh_code", wh_code);
+		
+		try {
+			List<InventoryList> itemList = releaseService.getReleaseItemList(map);
+			entity = new ResponseEntity<List<InventoryList>>(itemList,HttpStatus.OK);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			entity = new ResponseEntity<List<InventoryList>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return entity;
+	}
+	
+	// 출고 내역 
+	@RequestMapping("/WC/release/releaseList")
+	public ModelAndView releaseList(ModelAndView mnv, HttpSession session, SearchMap sm, @RequestParam(defaultValue="") String searchType, @RequestParam(defaultValue="") String keyword) throws Exception {
+		String url = "release/releaseList.frame";
+		
+		sm.put("cl_code", ((ClientVO)session.getAttribute("loginUser")).getCl_code());
+		sm.put("searchType",searchType);
+		sm.put("keyword", keyword);
+		sm.put("mode", session.getAttribute("mode"));
+		sm.setUrl("/WC/release/releaseList");
+		Map<String, Object> dataMap = releaseService.getReleaseList(sm);
+		mnv.addAllObjects(dataMap);
+		mnv.setViewName(url);
+		return mnv;
+	}
+	
+	@ResponseBody
+	@RequestMapping(value="/WC/release/completeReleaseDetail",method=RequestMethod.POST)
+	public ResponseEntity<List<CompleteReleaseDetailCommand>> completeReleaseDetail(int rls_no) throws Exception {
+		List<CompleteReleaseDetailCommand> releaseDetail = releaseService.getCompleteReleaseDetail(rls_no);
+		return new ResponseEntity<List<CompleteReleaseDetailCommand>>(releaseDetail, HttpStatus.OK);
+	}
+	
+	// 출고 요청 등록
+	@RequestMapping(value="/CO/release/releaseRequest")
+	@ResponseBody
+	public String insertRelease(HttpSession session, HttpServletRequest request) throws Exception{
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String co_code = loginUser.getCl_code();
+		String co_name = loginUser.getCl_name();
+		String cl_ceo =loginUser.getCl_ceo();
+		String dst_code = loginUser.getCl_code(); 
+		String dst_addr = loginUser.getCo_addr();
+		
+		ObjectMapper mapper = new ObjectMapper();
+		ReleaseCom releaseCommand = mapper.readValue(request.getReader(), ReleaseCom.class);
+		//System.out.println(orderCommand);
+		
+		String wh_code = releaseCommand.getWh_code();
+		String plan_ymd = releaseCommand.getPlan_ymd();
+
+		RlsItemVO[] rlsItem = releaseCommand.getRlsItemArray();
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		map.put("co_code", co_code);
+		map.put("co_name", co_name);
+		map.put("cl_ceo", cl_ceo);
+		map.put("dst_code",dst_code);
+		map.put("dst_addr", dst_addr);
+		map.put("wh_code", wh_code);
+		map.put("plan_ymd", plan_ymd);
+		map.put("rlsItem", rlsItem);
+		
+		try {
+			releaseService.registRelease(map);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return "success";
+	}
+	
+	// 출고 예정 목록 삭제
+	@RequestMapping(value="CO/release/removeRelease")
+	@ResponseBody
+	public void removeRelease(int rls_no, HttpServletRequest request) throws Exception{
+		releaseService.removeRelese(rls_no);
+	}
+	
+	
+}

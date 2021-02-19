@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Stock-Mapper">
+
+	<sql id="order">
+		<if test="searchType == 'in_ymd'.toString()">
+			ORDER BY iv.in_ymd DESC
+		</if>
+		<if test="searchType == 'inv_loc_desc'.toString()">
+			ORDER BY inv_loc DESC
+		</if>
+		<if test="searchType == 'inv_loc'.toString()">
+			ORDER BY inv_loc
+		</if>
+	</sql>
+	<sql id="coOrder">
+		<if test="searchType == 'real_date'.toString() or searchType==''.toString()">
+			ORDER BY real_date DESC
+		</if>
+
+		<if test="searchType == 'type'.toString()">
+			ORDER BY type
+		</if>
+		<if test="searchType == 'type_desc'.toString()">
+			ORDER BY type DESC
+		</if>
+	</sql>
+	
+	<sql id="coSearch">
+		<if test="searchType == 'cl_name'.toString()">
+			where cl_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'barcode'.toString()">
+			where barcode like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'item_name'.toString()">
+			where item_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'item_no'.toString()">
+			where item_no like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	<sql id="stSearch">
+		<if test="searchType == 'cl_name'.toString()">
+			and cl_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'item_no'.toString()">
+			and it.item_no like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'item_name'.toString()">
+			and item_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'bfr_loc'.toString()">
+			and bfr_loc like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	<sql id="chkSearch">
+		<if test="searchType == 'cl_name'.toString()">
+			and cl_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'item_no'.toString()">
+			and b.item_no like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'item_name'.toString()">
+			and item_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'bfr_loc'.toString()">
+			and bfr_loc like '%'||#{keyword}||'%'
+		</if>	
+		<if test="searchType == 'inv_no'.toString()">
+			and inv_no like '%'||#{keyword}||'%'
+		</if>	
+	</sql>	
+	
+	
+	<!-- 물류센터별 재고 목록 -->
+	<select id="selectStockList" resultType="stockList">
+		SELECT a.*, it.item_name, st.std_name, rownum
+		FROM (SELECT iv.item_no, cl.cl_name, sum(iv.inv_qty) inv_qty
+				FROM inventory iv, client cl
+				WHERE wh_code = #{wh_code} AND iv.co_code = cl.cl_code AND iv.sts_code = 'IS001'
+				GROUP BY iv.item_no, cl.cl_name) a, item it, standard st
+		WHERE a.item_no = it.item_no and it.std_no = st.std_no
+		<include refid="stSearch"/>	
+	</select>
+	
+	<!-- 물류센터 품목번호 별 재고 상세 목록 -->
+	<select id="selectListByItemNo" parameterType="java.util.Map" resultType="stockList">
+		SELECT rownum, inv_no, item_no, item_name, std_name, ih_qty inv_qty, reg_date in_ymd, inv_loc, reg_name
+		FROM(
+		SELECT
+		    iv.inv_no,
+		    ih.reg_name,
+		    ih.ih_qty,
+		    it.item_no,
+		    ih.reg_date,
+		    std_name,
+		    item_name,
+		    wz2.wz_loc || '-' || wz1.wz_loc || substr(ih_loc,instr(ih_loc,'-') ) inv_loc
+		FROM
+		    inventory iv,
+		    inv_history ih,
+		    item it,
+		    standard st,
+		    wh_zone wz1,
+		    wh_zone wz2
+		WHERE
+		    iv.item_no = #{item_no}
+		    AND   iv.inv_no = ih.inv_no
+		    AND   iv.wh_code = #{wh_code}
+		    AND   ih_type = '입고'
+		    AND   iv.item_no = it.item_no
+		    AND   it.std_no = st.std_no
+		    AND   substr(ih_loc,0,instr(ih_loc,'-') - 1) = wz1.wz_no
+		    AND   wz1.up_no = wz2.wz_no <include refid="order"/>)
+	</select>
+	<!-- 물류센터 재고번호별 상세이력 -->
+	<select id="selectStockHisByInvNo" resultType="stockDetail">
+		SELECT rownum, item_no, type, TO_CHAR(TO_DATE(real_date,'YYYYMMDD'),'YYYY-MM-DD') real_date, req_qty, real_qty, cng_qty, inv_loc, reg_name, item_name, std_name
+		FROM(
+		    SELECT it.item_no, ih_type type, reg_date real_date, ih_qty req_qty, (ih_qty-cng_qty) real_qty, cng_qty, wz2.wz_loc || '-' || wz1.wz_loc || SUBSTR(ih_loc, INSTR(ih_loc,'-')) inv_loc, ih.reg_name, item_name, std_name
+		    FROM inv_history ih, inventory iv, item it, standard st, wh_zone wz1, wh_zone wz2
+		    WHERE ih.inv_no = iv.inv_no and iv.wh_code = #{wh_code} and iv.inv_no = #{inv_no} and iv.item_no = it.item_no and it.std_no = st.std_no and SUBSTR(ih_loc,0,INSTR(ih_loc, '-')-1) = wz1.wz_no and wz1.up_no = wz2.wz_no
+		UNION ALL
+		    SELECT it.item_no, '실사' type, ic.chk_ymd real_date, cur_qty req_qty, chk_qty real_qty, chk_qty - cur_qty cng_qty, wz2.wz_loc || '-' || wz1.wz_loc || SUBSTR(bfr_loc, INSTR(bfr_loc,'-')) inv_loc, ic.reg_name, item_name, std_name
+		    FROM inv_check ic, inventory iv, item it, standard st, wh_zone wz1, wh_zone wz2
+		    WHERE ic.inv_no = #{inv_no} and ic.inv_no = iv.inv_no and iv.item_no = it.item_no and it.std_no = st.std_no and ic.upd_yn = 'Y' and SUBSTR(bfr_loc,0,INSTR(bfr_loc, '-')-1) = wz1.wz_no and wz1.up_no = wz2.wz_no
+		ORDER BY real_date DESC)
+	</select>
+	<!-- 기업 재고 목록 -->
+<!-- 	<select id="selectCoStockList" parameterType="str" resultType="stockList">
+		SELECT c.*, cl.cl_name, rownum
+		FROM (
+			SELECT a.*, nvl(b.inv_qty,0) inv_qty, wh_code
+			FROM(
+				SELECT item_no, item_name, std_name, barcode
+				FROM item it, standard st
+				WHERE it.co_code = #{co_code} and st.std_no = it.std_no) a left outer join
+				(SELECT item_no, sum(inv_qty) inv_qty, wh_code
+				FROM inventory
+				WHERE item_no in (
+					SELECT item_no
+					FROM item it
+					WHERE it.co_code = #{co_code})
+					GROUP BY item_no, wh_code) b
+					ON( a.item_no = b.item_no)) c LEFT OUTER JOIN client cl
+				ON(c.wh_code = cl.cl_code)
+		ORDER BY item_name
+		<include refid="coSearch"/>
+	</select> -->
+	<select id="selectCoStockList" parameterType="str" resultType="stockList">
+		SELECT
+		    ROWNUM,
+		    item_no,
+		    inv_qty,
+		    item_name,
+		    std_name,
+		    cl_name,
+		    wh_code
+		FROM
+		    (
+		        SELECT
+		            a.item_no,
+		            a.inv_qty,
+		            it.item_name,
+		            st.std_name,
+		            cl.cl_name,
+		            wh_code
+		        FROM
+		            (
+		                SELECT
+		                    item_no,
+		                    SUM(inv_qty) inv_qty,
+		                    wh_code
+		                FROM
+		                    inventory
+		                WHERE
+		                    co_code = #{co_code}
+		                GROUP BY
+		                    item_no,
+		                    wh_code
+		            ) a,
+		            item       it,
+		            standard   st,
+		            client     cl
+		        WHERE
+		            a.item_no = it.item_no
+		            AND a.wh_code = cl.cl_code
+		            AND it.std_no = st.std_no
+		        ORDER BY
+		            item_name
+		    ) a
+		<include refid="coSearch"/>
+	</select>
+	<!-- 기업 재고 상세 이력 0206 수정-->
+	<select id="selectCoStockHistory" parameterType="java.util.Map" resultType="stockDetail">
+		SELECT rownum, item_no, real_date, req_qty, real_qty, cng_qty, type
+		FROM(
+			SELECT item_no, real_date, (ih_qty + cng_qty) req_qty, ih_qty real_qty, cng_qty, type
+			FROM 
+			(SELECT iv.item_no, ih.reg_date real_date, sum(ih_qty) ih_qty, sum(cng_qty) cng_qty, ih_type type
+			FROM inv_history ih, inventory iv
+			WHERE ih.inv_no = iv.inv_no and item_no = #{item_no} and iv.wh_code = #{wh_code}
+			GROUP BY iv.item_no, iv.co_code, ih.reg_date, ih_type
+			 ) a		
+		UNION ALL
+		SELECT a.item_no, chk_ymd, cur_qty, chk_qty, chng_qty,  '실사' type
+		FROM ( 
+			SELECT sum(cur_qty) cur_qty, item_no, co_code, sum(chk_qty) chk_qty, sum(chk_qty) - sum(cur_qty) chng_qty, chk_ymd
+			FROM inventory iv, inv_check ic
+			WHERE co_code = #{co_code} and wh_code = #{wh_code} and iv.inv_no = ic.inv_no and item_no = #{item_no}
+			GROUP BY SUBSTR(inv_loc, 0,INSTR(inv_loc,'-')-1), item_no, co_code, chk_ymd) a, item it, standard st
+			WHERE a.item_no = it.item_no and it.std_no = st.std_no 
+		<include refid="coOrder"/>)
+	</select>
+	<!-- 물류센터 재고 실사 이력 -->
+	<select id="selectStockCheckList" resultType="stockCheck">
+		SELECT rownum, b.*, c.tot_qty
+        FROM (
+            SELECT a.chk_no, TO_CHAR(TO_DATE(a.chk_ymd,'YYYYMMDD'),'YYYY-MM-DD') chk_ymd, a.item_no, item_name, std_name, cur_qty, chk_qty, chng_qty, wz2.wz_loc || '-' || wz1.wz_loc || SUBSTR(bfr_loc, INSTR(bfr_loc,'-')) bfr_loc, rsn_code, a.reg_name, a.upd_yn, cl_name, inv_no, a.co_code
+            FROM(
+                SELECT ic.chk_no, ic.chk_ymd, it.item_no, item_name, std_name, cur_qty, chk_qty, (chk_qty-cur_qty) chng_qty, bfr_loc, rsn_code, ic.reg_name, ic.upd_yn, cl_name, iv.inv_no, iv.co_code
+                FROM inv_check ic, inventory iv, item it, standard st, client cl
+                WHERE ic.inv_no = iv.inv_no and iv.wh_code = #{wh_code} and iv.item_no = it.item_no and it.std_no = st.std_no and iv.co_code = cl.cl_code) a, wh_zone wz1, wh_zone wz2
+            WHERE SUBSTR(bfr_loc,0,INSTR(bfr_loc, '-')-1) = wz1.wz_no and wz1.up_no = wz2.wz_no
+            ORDER BY upd_yn, chk_ymd DESC ) b, (SELECT sum(inv_qty) tot_qty, co_code, item_no FROM inv_check ic, inventory iv WHERE ic.inv_no = iv.inv_no and iv.wh_code = #{wh_code} GROUP BY item_no, co_code) c 
+		WHERE b.co_code = c.co_code and b.item_no = c.item_no <include refid="chkSearch"/>
+		
+	</select>
+	<!-- 실사 결과 위치 및 수량 변경시 재고 분리하여 재고테이블에 등록 -->
+	<insert id="insertInvFromCheck">
+		INSERT INTO inventory (inv_no, item_no, co_code, inv_loc, wh_code, inv_qty, sts_code, oi_no, in_ymd)
+			SELECT inv_seq.nextval, item_no, co_code, bfr_loc, iv.wh_code, chk_qty, 'IS001', iv.oi_no, iv.in_ymd
+			FROM inv_check ic, inventory iv
+			WHERE ic.inv_no = iv.inv_no and ic.chk_no = #{chk_no}
+	</insert>
+	<!-- 실사 결과 위치 및 수량 변경시 분리된 만큼 기존 재고 수량 수정 -->
+	<!-- <update id="updateInvQtyByDiv">
+		UPDATE inventory iv
+		SET inv_qty = (SELECT (ic.cur_qty - ic.chk_qty) as inv_qty FROM inv_check ic WHERE ic.chk_no=#{chk_no})
+		WHERE EXISTS ( SELECT 1 FROM inv_check ic WHERE iv.inv_no = ic.inv_no and ic.chk_no = #{chk_no})
+	</update> -->
+	<!-- 실사 결과 수량만 변동시 -->
+	<update id="updateInvQtyByCheck">
+		UPDATE inventory iv
+		SET inv_qty = (SELECT ic.chk_qty as inv_qty FROM inv_check ic WHERE ic.chk_no=#{chk_no})
+		WHERE EXISTS ( SELECT 1 FROM inv_check ic WHERE iv.inv_no = ic.inv_no and ic.chk_no = #{chk_no})
+	</update>
+	<!-- 실사 결과 위치만 변동시 -->
+	<update id="updateInvLocByCheck">
+		UPDATE inventory iv
+		SET inv_loc = (SELECT ic.bfr_loc as inv_loc FROM inv_check ic WHERE ic.chk_no=#{chk_no})
+		WHERE EXISTS ( SELECT 1 FROM inv_check ic WHERE iv.inv_no = ic.inv_no and ic.chk_no = #{chk_no})
+	</update>
+	<!-- 실사 확인시 재고 적용 여부 표시 -->
+	<update id="updateUpdYN">
+		UPDATE inv_check
+		SET upd_yn = 'Y' 
+		WHERE chk_no = #{chk_no}
+	</update>
+	<!-- 실사 결과 쪽지 보내기 -->
+	<insert id="registMsgByStockCheck">
+		INSERT INTO msg (msg_no, sd_code, rc_code, content, wrt_ymd)
+			SELECT msg_seq.nextval, wh_code, co_code, #{content}, TO_DATE(sysdate,'YYYYMMDD')
+			FROM inv_check ic, inventory iv
+			WHERE ic.inv_no = iv.inv_no and ic.chk_no = #{chk_no}
+	</insert>
+</mapper>
+
+
+			

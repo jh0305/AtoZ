@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Item-Mapper">
+	<sql id="search">
+		<if test="searchType == 'item_name'.toString()">
+			where item_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'std_name'.toString()">
+			where std_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'cp_name'.toString()">
+			where cp_name like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+		
+		<select id="selectSearchItemList" resultType="com.spring.AtoZ.item.dto.ItemCommand">
+			select * from
+			(select item.*, (select std_name from standard where item.std_no=standard.std_no) std_name, (select cp_name from cooperator where cooperator.cp_no=item.cp_no) cp_name from item where item_no is not null and co_code = #{co_code} and sts_code='US001')
+			<include refid="search"/> order by item_name asc
+		</select>
+		
+		<select id="selectItemListCount" resultType="int">
+			select count(*) from
+			(select item.*, (select std_name from standard where item.std_no=standard.std_no) std_name, (select cp_name from cooperator where cooperator.cp_no=item.cp_no) cp_name from item where item_no is not null and co_code = #{co_code} and sts_code='US001')
+			<include refid="search" />
+		</select>
+		
+		<select id="selectItemDetail" resultType="com.spring.AtoZ.item.dto.ItemCommand" parameterType="com.spring.AtoZ.item.dto.ItemDetailCommand">
+			select item.*, (select std_name from standard where item.std_no=standard.std_no) std_name, (select cp_name from cooperator where cooperator.cp_no=item.cp_no) cp_name from item where co_code = #{co_code} and item_no=#{item_no}
+		</select>
+		
+		<select id="selectstdcode" parameterType="com.spring.AtoZ.item.dto.StandardCodeCheckCommand" resultType="str">
+			select std_code from standard where std_code=#{std_code} and co_code=#{co_code}
+		</select>
+		
+		<select id="selectStandardSequenceNextValue" resultType="int">
+			select standard_seq.nextVal from dual
+		</select>
+		
+		<update id="insertStandard" parameterType="standard">
+			insert into standard values (#{std_no},#{std_code},#{std_name},#{std_width},#{std_lngth},#{std_height},#{co_code},'US001')
+		</update>
+		
+		<sql id="standardSearch">
+			<if test="SsearchType == 'std_code'.toString()">
+				and std_code like '%'||#{Skeyword}||'%'
+			</if>
+			<if test="SsearchType == 'std_name'.toString()">
+				and std_name like '%'||#{Skeyword}||'%'
+			</if>
+		</sql>
+		
+		<select id="selectStandardList" resultType="standard">
+			select * from standard where std_no is not null and co_code=#{co_code} and sts_code='US001'
+			<include refid="standardSearch"/>
+		</select>
+		
+		<select id="selectStandardListCount" resultType="int">
+			select count(*) from standard where std_no is not null and co_code=#{co_code} and sts_code='US001'
+			<include refid="standardSearch"/>
+		</select>
+		
+		<select id="selectStandardByStdNo" resultType="standard">
+			select * from standard where std_no=#{std_no}
+		</select>
+		
+		<update id="updateStandard" parameterType="com.spring.AtoZ.item.dto.UpdateStandardCommand">
+			update standard set std_name=#{std_name}, std_width=#{std_width}, std_lngth=#{std_lngth}, std_height=#{std_height} where std_no=#{std_no}
+		</update>
+		
+		<update id="deleteStandard" parameterType="int">
+			update standard set sts_code='US002' where std_no =#{std_no}
+		</update>
+		
+		<sql id="cooperatorSearch">
+			<if test="searchType == 'cp_code'.toString()">
+				and cp_code like '%'||#{keyword}||'%'
+			</if>
+			<if test="searchType == 'cp_name'.toString()">
+				and cp_name like '%'||#{keyword}||'%'
+			</if>
+		</sql>
+		
+		<select id="selectCooperatorList" resultType="cooperator">
+			select * from cooperator
+			<include refid="cooperatorSearch"/>
+		</select>
+		
+		<select id="selectCooperatorListCount" resultType="int">
+			select count(*) from cooperator
+			<include refid="cooperatorSearch"/>
+		</select>
+		
+		<update id="insertItem" parameterType="com.spring.AtoZ.item.dto.ItemRegistCommand">
+			insert into item 
+			(item_no, co_code, std_no, gb_code, gr_code, type_code, item_name, reg_name, reg_ymd, cp_no, item_wgt, sts_code)
+			values (#{item_no}, #{co_code}, (select std_no from standard where std_name=#{std_name,jdbcType=VARCHAR} and co_code=#{co_code}),
+			#{gb_code,jdbcType=VARCHAR}, #{gr_code,jdbcType=VARCHAR}, #{type_code,jdbcType=VARCHAR}, #{item_name,jdbcType=VARCHAR}, #{reg_name,jdbcType=VARCHAR}, TO_CHAR(sysdate,'YYYYMMDD'),
+			(select cp_no from cooperator where cp_name=#{cp_name,jdbcType=VARCHAR}), #{item_wgt}, 'US001')
+		</update>
+		
+		<update id="insertItem2" parameterType="com.spring.AtoZ.item.dto.ItemRegistCommand">
+			insert into item 
+			(item_no, co_code, std_no, gb_code, gr_code, type_code, item_name, reg_name, reg_ymd, cp_no, item_wgt, sts_code)
+			values (#{item_no}, #{co_code}, (select std_no from standard where std_code=#{std_code,jdbcType=VARCHAR} and co_code=#{co_code}),
+			#{gb_code,jdbcType=VARCHAR}, #{gr_code,jdbcType=VARCHAR}, #{type_code,jdbcType=VARCHAR}, #{item_name,jdbcType=VARCHAR}, #{reg_name,jdbcType=VARCHAR}, TO_CHAR(sysdate,'YYYYMMDD'),
+			(select cp_no from cooperator where cp_name=#{cp_name,jdbcType=VARCHAR}), #{item_wgt}, 'US001')
+		</update>
+		
+		<select id="selectItemSequenceNextValue" resultType="int">
+			select item_seq.nextVal from dual
+		</select>
+		
+		<update id="updateItem" parameterType="com.spring.AtoZ.item.dto.ItemRegistCommand">
+			update item set
+			std_no=(select std_no from standard where std_name=#{std_name} and co_code=#{co_code}), gb_code=#{gb_code},
+			gr_code=#{gr_code}, type_code=#{type_code}, item_name=#{item_name},
+			cp_no=(select cp_no from cooperator where cp_name=#{cp_name}), item_wgt=#{item_wgt},upd_name=#{upd_name}, upd_ymd=TO_CHAR(sysdate,'YYYYMMDD')
+			where item_no=#{item_no}
+		</update>
+		
+		<update id="deleteItem" parameterType="int">
+			update item set sts_code='US002' where item_no =#{item_no}
+		</update>
+		
+		<select id="selectStandard" resultType="standard" parameterType="com.spring.AtoZ.item.dto.StandardNameCheckCommand">
+			select * from standard where std_code=#{std_code} and co_code=#{co_code}
+		</select>
+		
+		<select id="selectCooperator" resultType="cooperator" parameterType="str">
+			select * from cooperator where cp_name=#{cp_name}
+		</select>
+</mapper>

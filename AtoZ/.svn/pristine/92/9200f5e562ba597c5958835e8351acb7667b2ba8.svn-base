@@ -1,0 +1,121 @@
+package com.spring.AtoZ.picking.controller;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.picking.dto.PickingCommand;
+import com.spring.AtoZ.picking.dto.ReleaseListCommand;
+import com.spring.AtoZ.picking.service.PickingService;
+import com.spring.AtoZ.vo.ClientVO;
+
+@Controller
+public class PickingController {
+	
+	@Autowired
+	private PickingService pickingService;
+	
+	@RequestMapping(value="WH/picking/pickingList")
+	public ModelAndView receiveList(SearchMap sm, ModelAndView mnv, HttpSession session) throws SQLException{
+		String url = "picking/pickingList.frame";
+		
+		String wh_code = ((ClientVO)(session.getAttribute("loginUser"))).getCl_code();
+		
+		Map<String, Object> dataMap = pickingService.getReleaseList(wh_code, sm);
+		mnv.addObject("dataMap",dataMap);
+		mnv.setViewName(url);
+		
+		return mnv;
+	} 
+	
+	@RequestMapping(value="WH/picking/pickingItemList")
+	@ResponseBody
+	public ResponseEntity<Map<String,Object>> getItemList(String rls_no) throws SQLException{
+		ResponseEntity<Map<String,Object>> result = null;
+		
+		try {
+			Map<String,Object> dataMap = pickingService.getPickingList(rls_no);
+			result = new ResponseEntity<Map<String,Object>>(dataMap, HttpStatus.OK);
+		} catch (SQLException e) {
+			result = new ResponseEntity<Map<String,Object>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return result;
+	} 
+	
+	@RequestMapping(value="WH/picking/modifyManager",method=RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<Void> modifyManager(@RequestBody Map<String,String>[] arr) throws SQLException{
+		ResponseEntity<Void> result = null;
+		
+		try {
+			pickingService.modifyManager(arr);
+			result = new ResponseEntity<Void>(HttpStatus.OK);
+		} catch (SQLException e) {
+			result = new ResponseEntity<Void>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return result;
+	} 
+	
+	@RequestMapping(value="WH/picking/registPicking", method=RequestMethod.POST)
+	public ResponseEntity<Void> registPicking(String rls_no, HttpSession session) throws SQLException{
+		ResponseEntity<Void> result = null; 
+		
+		String wh_code = ((ClientVO)session.getAttribute("loginUser")).getCl_code();
+		boolean check = pickingService.getPickingCheck(rls_no);
+		if(check) { // 추가해도 된다 하면
+			pickingService.registPicking(rls_no, wh_code);
+			result = new ResponseEntity<>(HttpStatus.OK);
+		} else {
+			result = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		}
+		
+		
+		return result;
+	}
+	
+	@RequestMapping("WH/picking/getMarkByCode")
+	public ResponseEntity<Map<String,Object>> getMarkByCode(String inv_no) throws SQLException{
+		ResponseEntity<Map<String,Object>> result = null;
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap = pickingService.getMarkByCode(inv_no);
+		result = new ResponseEntity<Map<String,Object>>(dataMap, HttpStatus.OK);
+		
+		return result;
+	}
+	@RequestMapping(value="WH/picking/modifyPikInv", method = RequestMethod.POST)
+	public ResponseEntity<Void> modifyPikInv(@RequestParam Map<String,String> pick ) throws SQLException{
+		ResponseEntity<Void> result = null;
+		pickingService.modifyPikInv(pick);
+		
+		result = new ResponseEntity<Void>(HttpStatus.OK);
+		
+		return result;
+	}
+	
+	
+}
+
+
+
+
+
+
+

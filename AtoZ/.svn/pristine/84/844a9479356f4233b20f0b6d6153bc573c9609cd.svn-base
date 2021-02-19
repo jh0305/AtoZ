@@ -1,0 +1,134 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<c:set var="cnt" value="0" />
+<c:set var="searchMap" value="${pageMaker.searchMap }" />
+<style>
+.caroimg {
+	height: 300px;
+}
+
+.whtr:hover {
+	background: #e8f0fc;
+	cursor: pointer;
+}
+</style>
+
+<div style="padding : 0px 10px;">
+	<div class="page-header d-print-none" style="margin-left: 10px;">
+		<div class="row align-items-center">
+			<div class="col" style="padding: 0px;">
+				<h2 class="page-title">물류센터 목록</h2>
+			</div>
+		</div>
+	</div>
+
+	<div class="row row-deck row-cards">
+		<div class="card" style="width: 99%;margin: auto;">
+			<div class="card-body border-bottom"
+				style="padding: 10px 10px 10px 10px;">
+				<div class="d-flex">
+					<div class="text-muted" style="">
+						<div class="d-inline-block" style="">
+							<select class="form-select" id="searchType">
+								<option value="" ${searchMap.get('searchType') eq '' ? 'selected' : ''}>검색조건</option>
+								<option value="cl_name" ${searchMap.get('searchType') eq 'cl_name' ? 'selected' : ''}>물류센터명</option>
+								<option value="wh_addr" ${searchMap.get('searchType') eq 'wh_addr' ? 'selected' : ''}>주소</option>
+							</select>
+						</div>
+					</div>
+					<div>
+						<div class="ms-2 d-inline-block">
+							<input class="form-control" type="text" name="keyword"
+								placeholder="검색어를 입력하세요." id="keyword" value="">
+						</div>
+						<button class="btn btn-white btn-icon" aria-label="Button"
+							style="display: inline; position: relative; top: -2px;"
+							onclick="search_go()">
+							<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24"
+								height="24" viewBox="0 0 24 24" stroke-width="2"
+								stroke="currentColor" fill="none" stroke-linecap="round"
+								stroke-linejoin="round">
+								<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+								<circle cx="10" cy="10" r="7"></circle>
+								<line x1="21" y1="21" x2="15" y2="15"></line>
+							</svg>
+						</button>
+					</div>
+				</div>
+			</div>
+			<div class="table-responsive" style="min-height: 655px;">
+				<table class="table card-table table-vcenter text-nowrap datatable">
+					<thead>
+						<tr style="text-align: center;">
+							<th class="w-1">No. <svg xmlns="http://www.w3.org/2000/svg"
+									class="icon icon-sm text-dark icon-thick" width="24"
+									height="24" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor" fill="none" stroke-linecap="round"
+									stroke-linejoin="round">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+									<polyline points="6 15 12 9 18 15"></polyline></svg>
+							</th>
+							<th style="width: 200px;">물류센터명</th>
+							<th style="width: 450px;">주소</th>
+							<th style="width: 200px;">취급유형</th>
+							<th>총면적(㎡) [평]</th>
+							<th>대표자명</th>
+							<th>전화번호</th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:if test="${empty whsList }">
+							<tr>
+								<td></td>
+								<td></td>
+								<th>계약 가능한 물류센터가 없습니다.</th>
+							</tr>
+						</c:if>
+						<c:forEach var="whs" items="${whsList }">
+							<tr class="whtr" style="text-align: center;"
+								onclick="detailAjax($('#dialog'),800,700,this);">
+								<td><span class="text-muted">${cnt = cnt + 1}</span> <input
+									type="hidden" value="${whs.cl_code }" name="cl_code"> <input
+									type="hidden" value="${whs.cl_regno }" name="reg_no"></td>
+								<td>${whs.cl_name }</td>
+								<td><span class="text-muted">${whs.wh_addr } </span></td>
+								<td><span class="text-muted"> <c:forEach var="type"
+											items="${whs.cm_name }">
+									${type }&nbsp;
+								</c:forEach>
+								</span></td>
+								<td><span class="text-muted">${whs.tot_area}</span></td>
+								<td><span class="text-muted">${whs.cl_ceo }</span></td>
+								<td><span class="text-muted">${whs.cl_tel }</span></td>
+							</tr>
+						</c:forEach>
+					</tbody>
+				</table>
+			</div>
+			<div class="card-footer" style="background-color: white;">
+				<%@ include file="/WEB-INF/views/common/pagination.jsp"%>
+			</div>
+		</div>
+	</div>
+</div>
+<style>
+.caroimg {
+	height: 300px;
+}
+</style>
+
+
+<%@ include file="wh_detail.jsp"%>
+<%@ include file="wh_list_js.jsp"%>
+<script>
+function search_go(){
+	var data = {
+			searchType : $("#searchType").val(),
+			keyword : $("#keyword").val()			
+	}
+	searchList_go(1,'${searchMap.url}',data);
+}
+</script>
+
+

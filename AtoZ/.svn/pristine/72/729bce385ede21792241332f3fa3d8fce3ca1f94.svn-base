@@ -1,0 +1,261 @@
+package com.spring.AtoZ.contract.service;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.spring.AtoZ.common.dto.PageMaker;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.contract.dao.ContractDAO;
+import com.spring.AtoZ.contract.dto.ContractDetailCommand;
+import com.spring.AtoZ.contract.dto.ContractListCommand;
+import com.spring.AtoZ.contract.dto.DetailAreaCommand;
+import com.spring.AtoZ.contract.dto.RequestContractCommand;
+import com.spring.AtoZ.contract.dto.SendContractCommand;
+import com.spring.AtoZ.contract.dto.WhsListCommand;
+import com.spring.AtoZ.vo.C2CConctractVO;
+import com.spring.AtoZ.vo.CRDetailVO;
+import com.spring.AtoZ.vo.DetailMngVO;
+import com.spring.AtoZ.vo.ZoneVO;
+
+public class ContractServiceImpl implements ContractService{
+	private ContractDAO contractDAO;
+	public void setContractDAO(ContractDAO contractDAO) {
+		this.contractDAO = contractDAO;
+	}
+	
+	@Override 
+	public Map<String, Object>getWhsList(SearchMap sm) throws SQLException{		
+		sm.setPerPage(15);
+		List<WhsListCommand> whsList = contractDAO.getWhsList(sm);
+		Map<String, String> wh_codes = null;
+		//Map<String, List<String>> picMap = new HashMap<String,List<String>>();
+		List<Integer> rownums = new ArrayList<Integer>();
+		for(WhsListCommand list : whsList) {
+			int rownum = list.getRownum();
+			rownums.add(rownum);
+			String wh_code = list.getCl_code();
+			wh_codes = new HashMap<String, String>();
+			wh_codes.put("wh_code",wh_code);			
+			//List<DetailAreaCommand> cmnameList = contractDAO.getWhsDetailArea(wh_codes);
+			
+			List<DetailAreaCommand> cmnameList = contractDAO.selectTypeList(wh_code);
+			List<String> cmnames = new ArrayList<String>();
+			for(int i = 0; i < cmnameList.size(); i++) {
+				String cmname = cmnameList.get(i).getCm_name();
+				cmnames.add(cmname);
+			}
+			list.setCm_name(cmnames);
+			//picMap.put(wh_code, contractDAO.getWhsPictures(wh_code));
+			
+		}
+		int max = rownums.isEmpty() ? 0 : Collections.max(rownums);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		
+		
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		resultMap.put("whsList", whsList);
+		//resultMap.put("picMap", picMap);
+		resultMap.put("pageMaker", pm);
+		
+		return resultMap;
+	}
+	
+	@Override
+	public Map<String, Object> getWhsDetail(String wh_code) throws SQLException {
+		// typelist만 가져오기
+		Map<String, String> wh_codes = new HashMap<String,String>();
+		wh_codes.put("wh_code", wh_code);
+		Map<String, Object> result = new HashMap<String, Object>();
+		List<DetailAreaCommand> detailList = contractDAO.selectTypeList(wh_code);		
+		result.put("typeList", detailList);
+		return result;
+	}
+	
+	@Override
+	public List<ZoneVO> getWhsDetailArea(Map<String, Object> params) throws SQLException {
+		//String cm_code, String wh_code, List<Integer> wz_nos;
+		List<Integer> wznos = (List<Integer>)params.get("wz_nos");
+		List<ZoneVO> areaList = contractDAO.selectAreaList(params);
+		List<ZoneVO> newArea = new ArrayList<ZoneVO>();
+		if(wznos.size()>0) {
+			for(ZoneVO area : areaList) {
+				boolean flag = false;
+				for(int i =0; i<wznos.size(); i++) {
+					if(area.getWz_no() == wznos.get(i)) {
+						flag = true;
+					}
+				}
+				if(!flag) {
+					newArea.add(area);
+				}
+			}			
+		}else {
+			newArea = areaList;
+		}
+		return newArea;
+	}
+	
+	@Override
+	public void requestContract(SendContractCommand cmd) throws SQLException {
+		// cmd를 c2ccontractVO, crdetailVO로 나누기
+		C2CConctractVO c2cvo = new C2CConctractVO();
+		CRDetailVO cdvo = null;
+		String sts_code = "CR001";
+		
+		List<Integer> areas = cmd.getWz_no();
+		int tot_area = 0;
+		for(int i=0; i<areas.size(); i++) {
+			tot_area += contractDAO.selectThisArea(areas.get(i)); //dao - area갖고오는...
+		}
+		c2cvo.setCo_code(cmd.getCo_code());
+		c2cvo.setCr_area(tot_area);
+		c2cvo.setPre_priod(cmd.getPre_priod());
+		c2cvo.setSts_code(sts_code);
+		c2cvo.setWh_code(cmd.getWh_code());
+		
+		int cc_no = contractDAO.registC2CContract(c2cvo);
+		
+		
+		for(int i=0; i<areas.size(); i++) {
+			cdvo = new CRDetailVO();
+			cdvo.setCc_no(cc_no);
+			cdvo.setWz_no(areas.get(i));
+			contractDAO.registCRDetail(cdvo);
+		}
+		
+		// 계약요청상세관리 테이블에 insert하기
+		DetailMngVO dmvo = new DetailMngVO();
+		dmvo.setCc_no(cc_no);
+		dmvo.setCl_code(cmd.getCo_code());
+		dmvo.setCm_code("DM001"); //견적 요청
+		dmvo.setDm_content("N/A");
+		contractDAO.insertDetailMng(dmvo);
+	}	
+	
+	@Override
+	public Map<String, Object> getContractList(SearchMap sm) throws SQLException {
+		List<ContractListCommand> crList = contractDAO.selectContractList(sm);
+		List<Integer> cnt = new ArrayList<Integer>();
+		for(int i = 0; i < crList.size(); i++) {
+			cnt.add(crList.get(i).getRownum());
+		}
+		int max = cnt.isEmpty() ? 0 : Collections.max(cnt);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		
+		Map<String, Object> result = new HashMap<String,Object>();
+		result.put("crList", crList);
+		result.put("pageMaker", pm);
+		return result;
+	}
+	
+	@Override
+	public Map<String, Object> getReqContractList(SearchMap sm) throws SQLException {
+		List<RequestContractCommand> crList = contractDAO.selectReqContractList(sm);
+		List<Integer> cnt = new ArrayList<Integer>();
+		for(int i = 0; i < crList.size(); i++) {
+			cnt.add(crList.get(i).getRownum());
+		}
+		int max = cnt.isEmpty() ? 0 : Collections.max(cnt);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		
+		Map<String, Object> result = new HashMap<String,Object>();
+		result.put("crList", crList);
+		result.put("pageMaker", pm);
+		return result;
+	}
+	@Override
+	public Map<String,Object> getContractDetail(Map<String, Object> map) throws SQLException {
+		List<ContractDetailCommand> daoList = contractDAO.selectContractDetail(map);
+		// 요청 건인지, 완료 된 건인지 나누기
+		int dm_no = daoList.get(0).getDm_no();
+		List<ContractDetailCommand> zoneList = new ArrayList<ContractDetailCommand>();
+		for(int i=0; i<daoList.size(); i++) {
+			if(daoList.get(i).getExp_ymd().equals("N")) {
+				daoList.get(i).setIs_Req(true);
+			};
+			if(daoList.get(i).getDm_no() == dm_no) {
+				ContractDetailCommand cdc = new ContractDetailCommand();
+				cdc.setWz_area(daoList.get(i).getWz_area());
+				cdc.setWz_loc(daoList.get(i).getWz_loc());
+				cdc.setType_name(daoList.get(i).getType_name());
+				zoneList.add(cdc);
+			}
+		}
+		
+		Map<String,Object> resultMap = new HashMap<String,Object>();
+		resultMap.put("dataList", daoList);
+		resultMap.put("zoneList", zoneList);
+		return resultMap;
+	}
+	@Override
+	public void sendContractFromWhs(Map<String, Object> map) throws SQLException {
+		DetailMngVO dmvo = new DetailMngVO();
+		int cc_no = (int) map.get("cc_no");
+		dmvo.setCc_no(cc_no);
+		dmvo.setDm_content(map.get("dm_content").toString());
+		dmvo.setCm_code("DM002");
+		dmvo.setCl_code(map.get("wh_code").toString());
+		
+		Map<String, Object> c2cParams = new HashMap<String,Object>();
+		c2cParams.put("cc_no", cc_no);
+		c2cParams.put("mnth_chrg", (int)map.get("mnth_chrg"));
+			
+		contractDAO.insertDetailMng(dmvo); //detail_mng 에 추가
+		contractDAO.updateMnthChrg(c2cParams); //c2c_contract에 추가		
+	}
+	@Override
+	public void modifyContractFromWhs(Map<String, Object> map) throws SQLException {		
+		contractDAO.updateMnthChrg(map);
+		contractDAO.updateDetailMng(map);
+	}
+	@Override
+	public void cancleContract(Map<String, Object> map) throws SQLException {
+		DetailMngVO dmvo = new DetailMngVO();
+		C2CConctractVO ccvo = new C2CConctractVO();
+		int cc_no = Integer.parseInt(map.get("cc_no").toString());
+		dmvo.setCc_no(cc_no);
+		dmvo.setDm_content(map.get("dm_content").toString());
+		dmvo.setCl_code(map.get("cl_code").toString());
+		dmvo.setCm_code(map.get("cm_code").toString());
+		
+		ccvo.setCc_no(cc_no);
+		ccvo.setSts_code(map.get("sts_code").toString());
+		ccvo.setCc_dsc(map.get("cc_dsc").toString());
+		
+		List<Integer> wznos = contractDAO.selectWznoList(cc_no);
+		for(int i =0; i<wznos.size(); i++) {
+			contractDAO.updateWhZone(wznos.get(i),map.get("co_code").toString());
+		}
+		//contractDAO.deleteCRDetail(cc_no);
+		contractDAO.insertDetailMng(dmvo);
+		contractDAO.updateC2CContract(ccvo);
+		
+	}
+	// 계약 처리
+	@Override
+	public void manageContract(C2CConctractVO vo) throws SQLException {
+		String sts_code = vo.getSts_code();
+		Map<String, Object> param= new HashMap<String,Object>();
+		param.put("co_code", vo.getCo_code());
+		if(sts_code.equals("CR002")) {
+			List<Integer> wznos = contractDAO.selectWznoList(vo.getCc_no());
+			for(int i=0; i<wznos.size(); i++) {
+				param.put("wz_no", wznos.get(i));
+				contractDAO.updateCoCode(param);
+			}
+		}
+		contractDAO.updateC2CContract(vo);
+	}
+	
+}
+	

@@ -1,0 +1,57 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/jqvmap/dist/jqvmap.min.css" rel="stylesheet" />
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/css/tabler.min.css" rel="stylesheet" />
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/css/tabler-flags.min.css" rel="stylesheet" />
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/css/tabler-payments.min.css" rel="stylesheet" />
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/css/tabler-vendors.min.css" rel="stylesheet" />
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/css/demo.min.css" rel="stylesheet" />
+
+<link href="<%=request.getContextPath()%>/resources/css/jquery-ui.min.css" rel="stylesheet" />
+
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/selectize/dist/css/selectize.css" rel="stylesheet" />
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+<link href="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/nouislider/distribute/nouislider.min.css" rel="stylesheet" />
+<title>Insert title here</title>
+</head>
+<body>
+	<div class="container-tight py-6" style="margin-top:10%;">
+		<div class="text-center mb-4">
+			<a href="<%=request.getContextPath()%>/homepage/home"> <img src="<%=request.getContextPath() %>/resources/images/AZ.png" height="70" alt=""></a>
+		</div>
+		<form class="card card-md" action="<%=request.getContextPath() %>/serviceUse/login" method="post">
+			<div class="card-body">
+				<h2 class="card-title text-center mb-4">SOLOGI</h2>
+				<div class="mb-3">
+					<label class="form-label">아이디</label> 
+					<input type="text" class="form-control" name="id" placeholder="아이디를 입력하세요" onkeyup="this.value=this.value.replace(/[\ㄱ-ㅎㅏ-ㅣ가-힣]/g, &#39;&#39;);">
+				</div>
+				<div class="mb-2">
+					<label class="form-label"> 비밀번호 </label>
+					<div class="input-group input-group-flat">
+						<input value="!aA123456" type="password" class="form-control" name="pwd" placeholder="Password">
+					</div>
+				</div>
+				<div class="form-footer">
+					<button type="submit" class="btn btn-primary" style="width: 25%; margin-right: 23%">로그인</button>
+					<a href="<%=request.getContextPath() %>/serviceUse/findIdPwd" class="btn btn-light" style="width: 50%;">아이디 / 비밀번호 찾기</a>
+				</div>
+			</div>
+		</form>
+	</div>
+	
+</body>
+<script src="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<script src="<%=request.getContextPath()%>/resources/js/jquery-ui.min.js"></script>
+<script src="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/selectize/dist/js/standalone/selectize.min.js"></script>
+<script src="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/flatpickr/dist/flatpickr.min.js"></script>
+<script src="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/flatpickr/dist/plugins/rangePlugin.js"></script>
+<script src="<%=request.getContextPath()%>/resources/bootstrap/dist/libs/nouislider/distribute/nouislider.min.js"></script>
+<!-- Tabler Core -->
+<script src="<%=request.getContextPath()%>/resources/bootstrap/dist/js/tabler.min.js"></script>
+</html>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="Location-Mapper">
+
+ 	<select id="selectFixedCandidateTest" parameterType="hashMap" resultType="com.spring.AtoZ.strategy.dto.LocationVO">
+	 	SELECT wz_no, loc_root, rule, co_code, rk_no
+		FROM
+		    (SELECT level , wz_no, SUBSTR(SYS_CONNECT_BY_PATH(wz_loc, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(wz_loc, '-')) ) loc_root, trg_code, SUBSTR(SYS_CONNECT_BY_PATH(trg_code, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(trg_code, '-')) ) rule
+		                , SUBSTR(SYS_CONNECT_BY_PATH(co_code, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(co_code, '-')) ) co_code, rk_no
+		    FROM wh_zone
+		    WHERE CONNECT_BY_ISLEAF = 1 AND wh_code = #{wh_code}
+		    START WITH up_no IS NULL
+		    CONNECT BY PRIOR wz_no = up_no)
+			WHERE REGEXP_LIKE(rule, 'P'||#{item_no} )
+ 	</select>
+ 	
+ 	<select id="selectRack" resultType="com.spring.AtoZ.strategy.dto.StrategyRackCommand">
+ 		SELECT rk_no, rk_flr, blk_col, blk_width, blk_lngth, blk_height, wh_code
+ 		FROM rack
+ 		WHERE rk_no = #{rk_no}
+ 	</select>
+ 	
+ 	<select id="selectRackByLoc" resultType="com.spring.AtoZ.strategy.dto.StrategyRackCommand">
+ 		SELECT rk_no, rk_flr, blk_col, blk_width, blk_lngth, blk_height, wh_code
+ 		FROM rack
+ 		WHERE rk_no = (SELECT rk_no FROM wh_zone WHERE wz_no = #{invLoc})
+ 	</select>
+ 	
+ 	
+ 	<select id="seleceHashSameItem" parameterType="hashMap" resultType="com.spring.AtoZ.strategy.dto.LocationVO">
+ 		SELECT z.wz_no wz_no, z.rk_no rk_no, i.inv_loc rack_code 
+ 		FROM inventory i, wh_zone z
+ 		WHERE (i.item_no = #{item.item_no} AND i.co_code = #{item.co_code}) AND SUBSTR(i.inv_loc, 0,INSTR(i.inv_loc ,'-')-1) IN
+ 			<foreach collection="locationList" item="loc" open="(" close=")" separator=",">
+	 	 		#{loc.wz_no}
+ 			</foreach>
+ 			AND SUBSTR(i.inv_loc, 0,INSTR(i.inv_loc ,'-')-1) = z.wz_no
+ 	</select>
+ 	
+ 	<select id="selectFillVolume" resultType="int">
+ 		SELECT NVL(SUM(std_width * std_lngth * std_height * inventory.inv_qty),0) fill
+ 		FROM inventory, item, standard
+ 		WHERE inventory.inv_loc = #{rack_code} AND (inventory.item_no = item.item_no AND inventory.co_code = item.co_code) AND item.std_no = standard.std_no
+ 	</select>
+ 	
+ 	<select id="selectZoneVolume" resultType="int">
+ 		SELECT NVL(wz_lngth * wz_width, 0) fill
+ 		FROM wh_zone
+ 		WHERE wz_no = #{wz_no}
+ 	</select>
+ 	
+ 	<select id="selectFillArea" resultType="int">
+ 		SELECT NVL(SUM((SELECT std_width * std_lngth FROM standard WHERE std_no = item.std_no)),0) fill
+ 		FROM inventory, item
+ 		WHERE inv_loc = #{wz_no} AND (inventory.item_no = item.item_no AND inventory.co_code = item.co_code)
+ 	</select>
+ 	
+ 	
+ 	<select id="selectFreeCandidateTest" parameterType="hashMap" resultType="com.spring.AtoZ.strategy.dto.LocationVO">
+	 	SELECT wz_no, loc_root, rule, co_code, rk_no
+		FROM
+		    (SELECT level , wz_no, SUBSTR(SYS_CONNECT_BY_PATH(wz_loc, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(wz_loc, '-')) ) loc_root, trg_code, SUBSTR(SYS_CONNECT_BY_PATH(trg_code, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(trg_code, '-')) ) rule
+		                , SUBSTR(SYS_CONNECT_BY_PATH(co_code, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(co_code, '-')) ) co_code, rk_no,
+		                SUBSTR(SYS_CONNECT_BY_PATH(cm_code, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(cm_code, '-')) ) cm_code
+		    FROM wh_zone
+		    WHERE CONNECT_BY_ISLEAF = 1 AND wh_code = #{wh_code}
+		    START WITH up_no IS NULL
+		    CONNECT BY PRIOR wz_no = up_no)
+		WHERE LENGTH(REGEXP_REPLACE(rule, #{item_rank}||'|'||#{gr_code}||'|-','')) is null AND REGEXP_LIKE(co_code, #{co_code}) AND REGEXP_LIKE(cm_code, #{type_code}) 
+ 	</select>
+ 	
+ 	<select id="selectPriority" resultType="com.spring.AtoZ.strategy.dto.Priority">
+ 		SELECT frst_lv first, scnd_lv second
+ 		FROM pri_std
+ 		WHERE wh_code = #{wh_code}
+ 	</select>
+ 	
+ 	<select id="selectRackStd" resultType="com.spring.AtoZ.strategy.dto.StrategyFloorCommand">
+ 		SELECT *
+ 		FROM rack_std
+ 		WHERE rk_no = #{rk_no}
+ 	</select>
+ 	
+ 	<select id="selectItemCommand" resultType="com.spring.AtoZ.strategy.dto.StrategyItemCommand">
+ 		SELECT 
+		    order_item.oi_no, order_item.qty, order_item.item_no, order_item.co_code,
+		    item.std_no, item.gb_code, item.gr_code, item.type_code, item.item_name, item.item_wgt,
+		    standard.std_width, standard.std_lngth, standard.std_height,
+		    NVL((SELECT item_rank FROM item_rank WHERE item_no = #{item_no} AND co_code = #{co_code}
+		    	 AND wh_code = (SELECT wh_code FROM in_order WHERE ord_no = #{ord_no})),0) item_rank
+		FROM item, order_item, standard
+		WHERE order_item.oi_no = #{oi_no} AND item.item_no = order_item.item_no AND item.co_code = order_item.co_code
+		        AND item.std_no = standard.std_no
+ 	</select>
+ 	
+ 	<select id="selectItemCommandByInvNo" resultType="com.spring.AtoZ.strategy.dto.StrategyItemCommand">
+ 		SELECT 
+		    i.item_no, i.co_code, inv_no,
+		    item.std_no, item.gb_code, item.gr_code, item.type_code, item.item_name, item.item_wgt,
+		    standard.std_width, standard.std_lngth, standard.std_height
+		FROM item, inventory i, standard
+		WHERE i.inv_no = #{invNo} AND item.item_no = i.item_no AND item.co_code = i.co_code
+		AND item.std_no = standard.std_no
+ 	</select>
+ 	
+ 	<update id="insertRankForItem">
+ 		INSERT INTO item_rank
+ 		(item_no, co_code, wh_code, item_rank)
+ 		values (#{item_no}, #{co_code}, (SELECT wh_code FROM in_order WHERE ord_no = #{ord_no}), '3')
+ 	</update>
+ 	
+ 	<update id="insertTempStock">
+ 		INSERT INTO inventory
+ 		(inv_no, item_no, co_code, inv_loc, wh_code, inv_qty, sts_code, oi_no)
+ 		VALUES (inv_seq.nextval, #{item_no}, #{co_code}, #{inv_loc}, #{wh_code}, #{inv_qty}, 'IS002', #{oi_no})
+ 	</update>
+ 	
+    <update id="updateOrderToPr">
+    	UPDATE in_order 
+    	SET sts_code = 'PR003'
+    	WHERE ord_no = #{ord_no} 
+    </update>
+    
+</mapper>
+
+
+
+
+
+
+

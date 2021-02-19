@@ -1,0 +1,88 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<style>
+.markdown>table thead th, .table thead th{
+	    text-transform: lowercase;
+}
+</style>
+<div style="margin:4% 0% 2% 5%;">
+	<strong style="font-size:1.2rem;">거래처목록</strong>
+</div>
+
+<div class="card" style="margin: 0% 2% 0% 2%;">
+	<div class="card-header" style="display:inline-block;" id="cooperator-search-div">
+		
+	</div>
+	<div class="card-body">
+		<div class="table-responsive">
+			<table class="table card-table table-vcenter text-nowrap datatable">
+				<thead>
+					<tr>
+						<th class="text-center">거래처코드</th>
+						<th class="text-center">거래처명</th>
+					</tr>
+				</thead>
+				<tbody id="cooperator-list-tbody">
+				
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="card-footer" style="background-color:white;" id="cooperator-page">
+	
+	</div>
+</div>
+<div style="margin-top:2%; margin-left:2%; text-align:right;">
+<input type="button" class="btn btn-white" onclick="closeDial($('#dialog7'));" value="취소"/>
+</div>
+
+<%@ include file="/WEB-INF/views/common/asyPagination.jsp" %>
+<script type="text/x-handlebars-template" id="cooperator-search-template">
+<select class="form-select" style="display:inline-block; width:30%;" id="CsearchType">
+	<option value="" {{selected search.searchType ""}}>검색구분</option>
+	<option value="cp_code" {{selected search.searchType "cp_code"}}>거래처코드</option>
+	<option value="cp_name" {{selected search.searchType "cp_name"}}>거래처명</option>
+</select>
+<input type="text" id="Ckeyword" value="{{search.keyword}}" class="form-control" placeholder="Search for…" style="width:30%; display:inline-block;">
+<a href="javascript:search_cooperator()" class="btn btn-white btn-icon" aria-label="Button">
+	<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+		<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+		<circle cx="10" cy="10" r="7"></circle>
+		<line x1="21" y1="21" x2="15" y2="15"></line>
+	</svg>
+</a>
+</script>
+<script type="text/x-handlebars-template" id="cooperator-list-template">
+	{{#each dataList}}
+		<tr class="clickabletr" onclick="selectCooperator('{{cp_name}}');">
+			<td class="text-center">{{cp_code}}</td>
+			<td class="text-center">{{cp_name}}</td>
+		</tr>
+	{{/each}}
+</script>
+
+<script>
+var targets1 = {
+	pagination : '#cooperator-page',
+	table_div : '#cooperator-list-tbody',
+	table_template : '#cooperator-list-template',
+	search_div : '#cooperator-search-div',
+	search_template : '#cooperator-search-template'
+};
+
+function search_cooperator() {
+	var tdiv = $('#cooperator-search-div');
+	var searchType = $('#CsearchType').val().trim();
+	var keyword = $('#Ckeyword').val().trim();
+	var data1 = {
+			searchType : searchType,
+			keyword : keyword
+	};
+	asyncSearch_go(1,"CO/item/cooperatorList", targets1, data1);
+}
+function selectCooperator(cp_name) {
+	$('#Icp_name').val(cp_name.trim());
+	$('#cp_name').val(cp_name.trim());
+	closeDial($('#dialog7'));
+}
+</script>

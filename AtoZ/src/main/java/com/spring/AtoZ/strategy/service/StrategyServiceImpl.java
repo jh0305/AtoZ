@@ -1,0 +1,325 @@
+package com.spring.AtoZ.strategy.service;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.spring.AtoZ.strategy.dao.StrategyDAO;
+import com.spring.AtoZ.strategy.dto.LocationVO;
+import com.spring.AtoZ.strategy.dto.Priority;
+import com.spring.AtoZ.strategy.dto.StrategyFloorCommand;
+import com.spring.AtoZ.strategy.dto.StrategyItemCommand;
+import com.spring.AtoZ.strategy.dto.StrategyRackCommand;
+import com.spring.AtoZ.strategy.dto.StrategyStockCommand;
+import com.spring.AtoZ.vo.OrderItemVO;
+
+public class StrategyServiceImpl implements StrategyService {
+	private StrategyDAO strategyDAO;
+	public void setStrategyDAO(StrategyDAO strategyDAO) {
+		this.strategyDAO = strategyDAO;
+	}
+	
+	@Override
+	public void matchItemListToLocation(List<OrderItemVO> itemList, String wh_code) throws SQLException {
+	
+		modifyOrderToPr(itemList.get(0).getOrd_no());
+		
+		for(int i=0; i<itemList.size(); i++) {
+			
+			StrategyItemCommand item = strategyDAO.selectItemCommand(itemList.get(i));
+			if(item.getOi_loc() != null) {
+				return;
+			}
+			
+			if(item.getItem_rank() == 0) {
+				strategyDAO.insertRankForItem(itemList.get(i));
+				item.setItem_rank(3);
+			}
+			
+			Map<String, Integer> result = new HashMap<String,Integer>(); // 적재위치 결과가 담길 맵. 키 = 적재공간 wz_no : 값 = 수용 가능 갯수 
+			
+			result.put("cnt", 0); // 결과로 적재 위치가 확정된 품목의 갯수. 적재할 공간이 결정될 때마다 갯수가 올라간다.
+			// item의 qty와 비교해서 100% 채웠는지 미달인지 판단하여 다음 단계로 또는 반복을 수행한다.
+			
+			getFixedList(item, result, wh_code); // 고정 로케이션 탐색
+			if(result.size() < 2 || result.get("cnt") < item.getQty() ) {
+				getFreeList(item, result, wh_code); // 자유 로케이션 탐색
+			}
+			if(result.size() < 2 || result.get("cnt") < item.getQty() ) {
+				registTemp(item, wh_code, "", item.getQty()-result.get("cnt"));
+			}
+			
+			// 여기서 인서트 또는 업데이트
+//			if(result.get("cnt") == item.getQty()) {
+//				Set<String> keys = result.keySet();
+//				for(String key : keys) {
+//					if(!key.equals("cnt")) {
+//						StrategyStockCommand stock = new StrategyStockCommand();
+//						stock.setInv_loc(key);
+//						stock.setInv_qty(result.get(key));
+//						stock.setCo_code(item.getCo_code());
+//						stock.setItem_no(item.getItem_no());
+//						stock.setWh_code(wh_code);
+//						stock.setOi_no(item.getOi_no());
+//						strategyDAO.insertTempStock(stock);
+//					}
+//				}
+//			}
+		}
+		
+		
+		
+	}
+	private void modifyOrderToPr(int ord_no) throws SQLException {
+		strategyDAO.updateOrderToPr(ord_no);
+	}
+
+	private void registTemp(StrategyItemCommand item, String wh_code, String loc, int qty) throws SQLException {
+		if(qty > 0) {
+//			for(int i=0; i<qty; i++) {
+				StrategyStockCommand stock = new StrategyStockCommand();
+				stock.setInv_loc(loc);
+				stock.setInv_qty(qty);
+				stock.setCo_code(item.getCo_code());
+				stock.setItem_no(item.getItem_no());
+				stock.setWh_code(wh_code);
+				stock.setOi_no(item.getOi_no());
+				strategyDAO.insertTempStock(stock);
+//			}
+		}
+	}
+	
+	private Map<String,Integer> getFixedList(StrategyItemCommand item, Map<String,Integer> result, String wh_code) throws SQLException { // 고정 로케이션 탐색
+		List<LocationVO> fixedList = strategyDAO.selectFixedCandidateTest(item.getItem_no(),wh_code); // 해당 품목의 item_no로 기준이 등록된 공간을 찾는다.
+		
+		if(fixedList.size() < 1) { // 고정로케이션 공간이 없을 경우 
+			return null; 
+		} else { // 고정로케이션 공간이 1개 이상 있을 경우
+			
+			
+			getHasSameItem(item, wh_code, fixedList, result);// fixedList 중에서 이미 같은 품목이 있는 공간을 계산한다.
+			
+			if(item.getQty() > result.get("cnt")) { // 같은 품목이 있는 공간을 탐색했지만 갯수가 모자랄 때
+				
+				
+				for(int i=0; i < fixedList.size(); i++) { // 찾은 고정로케이션 fixedList를 반복해서 공간을 계산
+					
+					if(result.get("cnt") == item.getQty()) { // 품목의 갯수를 다 채웠을 때 종료
+						return null;
+					}
+					
+					LocationVO location = fixedList.get(i);
+					
+					if(location.getRk_no() != -1) {
+						StrategyRackCommand rack = strategyDAO.selectRack(location.getRk_no()); // 해당 랙의 랙종류 정보 가져오기
+						for(int r=1; r <= rack.getBlk_col() ;i++) { // 랙의 층 만큼
+							for(int c=1; c <= rack.getRk_flr() ;c++){ // 랙의 열 만큼
+								
+								if(result.get("cnt") == item.getQty()) {// 품목의 갯수를 다 채웠을 때 종료
+									return null;
+								}
+								
+								String rack_code = location.getWz_no()+ "-" +r+c;
+								location.setRack_code(rack_code);
+								int count = CalcSize(location, item);
+								if(count > 0) {
+									if(count <= item.getQty() - result.get("cnt")) {
+										registTemp(item, wh_code,location.getRack_code(),count);
+										result.put("cnt",result.get("cnt")+count);
+									} else if(count > item.getQty() - result.get("cnt")) {
+										registTemp(item, wh_code,location.getRack_code(),item.getQty() - result.get("cnt"));
+										result.put("cnt", item.getQty());
+									}
+								}
+							}
+						}
+					} else {
+						
+						int count = CalcSize(location, item);
+						if(count > 0) {
+							if(count <= item.getQty() - result.get("cnt")) {
+								registTemp(item, wh_code,location.getRack_code(),count);
+								result.put("cnt",result.get("cnt")+count);
+							} else if(count > item.getQty() - result.get("cnt")) {
+								registTemp(item, wh_code,location.getRack_code(),item.getQty() - result.get("cnt"));
+								result.put("cnt", item.getQty());
+							}
+						}
+					}
+				}
+			}
+			// /if
+			
+			return result;
+		}
+	}
+	
+	
+	private void getHasSameItem(StrategyItemCommand item, String wh_code, List<LocationVO> locationList, Map<String,Integer> result) throws SQLException {
+		
+		Map<String,Object> data = new HashMap<>();
+		data.put("item", item);
+		data.put("locationList", locationList);
+		
+		List<LocationVO> hasSameItem = strategyDAO.seleceHashSameItem(data);
+		/*
+		 * 재고테이블에서 Item의 item_no와 co_code에 해당하는 행을 찾고 로케이션으로 group 하여 "wz_no-단열번호" 를 select한 결과로 
+		 * 구역 테이블에서 select
+		 * 이 시점에 locationVO들에 rack_code(단열번호까지) 입력된다.
+		 */
+		
+		if(hasSameItem.size()<1) {
+			return;
+		} else {
+			for(int i=0; i < hasSameItem.size();i++) {
+				if(result.get("cnt") == item.getQty()) {// 품목의 갯수를 다 채웠을 때 종료
+					return;
+				}
+				int count = CalcSize(hasSameItem.get(i),item);
+				if(count > 0) {
+					if(count <= item.getQty() - result.get("cnt")) {
+						registTemp(item, wh_code,hasSameItem.get(i).getRack_code(),count);
+						result.put("cnt",result.get("cnt")+count);
+					} else if(count > item.getQty() - result.get("cnt")) {
+						registTemp(item, wh_code,hasSameItem.get(i).getRack_code(),item.getQty() - result.get("cnt"));
+						result.put("cnt", item.getQty());
+					}
+				}
+			}
+			
+		}
+		
+		
+	}
+
+	private int CalcSize(LocationVO location, StrategyItemCommand item) throws SQLException {
+		if(location.getRk_no() != -1) {
+			
+			StrategyRackCommand rack = strategyDAO.selectRack(location.getRk_no()); // 해당 랙의 랙종류 정보 가져오기
+			
+			// 해당 랙의 수용 가능 크기
+			
+			double volume = rack.getBlk_width() * 100 * rack.getBlk_lngth() * 100 * rack.getBlk_height() * 100; // cm 단위로
+			volume = (int) (volume*0.9); // 10%는 여유공간 
+			// 현재 해당 공간에 들어있는 재고 크기
+			int fill = strategyDAO.selectFillVolume(location.getRack_code()); // 해당 공간에 들어있는 재고 크기 계산
+			// rack_code(재고 테이블에 입력된 "wz_no-단열숫자" 값으로 재고 테이블을 다시 조회, 해당 재고의 품목,기업 코드로 품목 테이블과 조인
+			// 조인 한 후 std_code를 가지고 해당 규격의 가로 * 세로 * 높이 한 값들을 전부 count
+			
+			if(fill < volume) {
+				int extra = (int) (volume - fill);
+				int result = extra / (item.getStd_height() * item.getStd_lngth() * item.getStd_width());
+				return result; //수용 가능한 해당 물품의 갯수가 리턴된다.
+			} else {
+				return 0;
+			}
+			
+		} else {
+			int volume = strategyDAO.selectZoneVolume(location.getWz_no());
+			// 해당 로케이션이 랙이 아니고 구역일 경우 해당 구역 번호로 다시 조회해서 가로세로 곱하기로 면적을 구한다.
+			volume = (int) (volume*0.9);
+			// 현재 해당 공간에 들어있는 재고 크기
+			int fill = strategyDAO.selectFillArea(location.getWz_no());
+			// rack_code(재고 테이블에 입력된 "wz_no" 값으로 재고 테이블을 다시 조회, 해당 재고의 품목,기업 코드로 품목 테이블과 조인
+			// 조인 한 후 std_code를 가지고 해당 규격의 가로 * 세로 한 값들을 전부 count
+			if(fill < volume) {
+				int extra = (int) (volume - fill);
+				int result = extra / (item.getStd_lngth() * item.getStd_width());
+				return result; //수용 가능한 해당 물품의 갯수가 리턴된다.
+			} else {
+				return 0;
+			}
+			
+		}
+		
+		
+	}
+
+	private Map<String,Integer> getFreeList(StrategyItemCommand item, Map<String,Integer> result, String wh_code) throws SQLException {
+		List<LocationVO> freeList = strategyDAO.selectFreeCandidateTest(item, wh_code); // 해당 item정보로 자유로케이션 탐색 
+		
+		if(freeList.size() < 1) { // 해당하는 공간이 없는 경우
+			return null;
+		}
+		Priority pri = strategyDAO.selectPriority(wh_code);
+		
+		String[] info = new String[2];  // 우선순위 테이블에서 추출
+		info[0] = "R";
+		info[1] = "G";
+		
+		for(int i=0; i<freeList.size();i++) {
+			freeList.get(i).setScore(info);
+		}
+		
+		freeList.sort(null);
+		
+		getHasSameItem(item, wh_code, freeList, result);// freeList 중에서 이미 같은 품목이 있는 공간을 계산한다.
+		
+		if(item.getQty() > result.get("cnt")) { // 같은 품목이 있는 공간을 탐색했지만 갯수가 모자랄 때
+			
+			for(int i=0; i < freeList.size(); i++) {
+				
+				if(result.get("cnt") == item.getQty()) {// 품목의 갯수를 다 채웠을 때 종료
+					return null;
+				}
+				
+				LocationVO location = freeList.get(i);
+				if(location.getRk_no( )!= -1) {
+					StrategyRackCommand rack = strategyDAO.selectRack(location.getRk_no()); // 해당 랙의 랙종류 가져오기
+					List<StrategyFloorCommand> rack_flr = strategyDAO.selectRackStd(location.getRk_no()); // 해당 랙의 층정보 가져오기
+					
+					for(int r=1; r <= rack_flr.size(); r++) { // 랙의 층 만큼 반복 
+						
+						if(rack_flr.get(i).getMax_wgt() > item.getItem_wgt() && rack_flr.get(i).getMin_wgt() < item.getItem_wgt()) {
+							
+							// 수용 가능한 층수일 경우
+							for(int c=1; c <= rack.getBlk_col() ;c++){ // 랙의 열 만큼
+								
+								if(result.get("cnt") == item.getQty()) {// 품목의 갯수를 다 채웠을 때 종료
+									return null;
+								}
+								
+								String rack_code = location.getWz_no()+ "-" +r+c;
+								location.setRack_code(rack_code);
+								int count = CalcSize(location, item); // 채울 수 있는 갯수가 반환된다.
+							
+								if(count > 0) { // 1개이상 넣을 수 있을 경우
+									if(count <= (item.getQty() - result.get("cnt"))) {
+										registTemp(item, wh_code,location.getRack_code(),count);
+										result.put("cnt",result.get("cnt")+count);
+									} else if(count > (item.getQty() - result.get("cnt"))) {
+										registTemp(item, wh_code,location.getRack_code(),item.getQty() - result.get("cnt"));
+										result.put("cnt", item.getQty());
+									}
+								} // /if count
+								
+							} // /for 열
+							
+						}// /if 무게 조건
+						
+					}// /for 층
+					
+				}// /if 랙일경우
+				else {
+					int count = CalcSize(location, item);
+					if(count > 0) {
+						if(count <= item.getQty() - result.get("cnt")) {
+							registTemp(item, wh_code,location.getRack_code(),count);
+							result.put("cnt",result.get("cnt")+count);
+						} else if(count > item.getQty() - result.get("cnt")) {
+							registTemp(item, wh_code,location.getRack_code(),item.getQty() - result.get("cnt"));
+							result.put("cnt", item.getQty());
+						}
+					}
+				} // /else 랙이 아닐경우
+			} // /for
+			
+		}
+		
+		return result;
+	}
+	
+	
+	
+}

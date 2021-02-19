@@ -1,0 +1,130 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+    
+<head>
+<style>
+	hr{
+		margin:1rem 0;
+	}
+</style>
+</head>
+<body>
+<div style="margin:4% 0% 2% 5%;">
+	<strong style="font-size:1.2rem;">품목수정</strong>
+</div>
+
+<div class="card" style="margin: 0% 2% 0% 2%;">
+	<div class="card-body">
+		<div class="row">
+			<div class="col-2"><strong>품목명</strong></div>
+			<div class="col-4"><input type="text" class="form-control" id="item_name" name="item_name"/></div>
+			<div class="col-2"><strong>규격명</strong></div>
+			<div class="col-4">
+				<input type="text" name="std_name" id="std_name" class="form-control" style="width:70%; display:inline;" readonly/>
+				<input type="button" class="btn btn-white btn-icon" value="검색" onclick="openStandardList()"/>
+			</div>
+		</div>
+		<hr/>
+		<div class="row">
+			<div class="col-2"><strong>무게(Kg)</strong></div>
+			<div class="col-4"><input type="text" name="item_wgt" id="item_wgt" class="form-control"/></div>
+			<div class="col-2"><strong>거래처명</strong></div>
+			<div class="col-4">
+				<input type="text" name="cp_name" id="cp_name" class="form-control" id="cp_name" style="width:70%; display:inline;" readonly/>
+				<input type="button" class="btn btn-white btn-icon" value="검색" onclick="openCooperatorList()"/>
+			</div>
+		</div>
+		<hr/>
+		<div class="row">
+			<div class="col-2"><strong>품목구분</strong></div>
+			<div class="col-4">
+				<input type="radio" name="gb_code2" value="GB001"/> 원재료 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="gb_code2" value="GB002"/> 부재료 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="gb_code2" value="GB003"/> 제품 
+				<br>
+				<input type="radio" name="gb_code2" value="GB004"/> 반제품 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="gb_code2" value="GB005"/> 상품 
+			</div>
+			<div class="col-2"><strong>품목카테고리</strong></div>
+			<div class="col-4">
+				<input type="radio" name="type_code2" value="WT001"/> 실온 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="type_code2" value="WT002"/> 저온 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="type_code2" value="WT003"/> 냉장 
+				<br>
+				<input type="radio" name="type_code2" value="WT004"/> 냉동 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="type_code2" value="WT005"/> 위험물 
+			</div>
+		</div>
+		<hr/>
+		<div class="row">
+			<div class="col-2"><strong>품목취급유형</strong></div>
+			<div class="col-10">
+				<input type="radio" name="gr_code2" value="GR001"/> 의류&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<input type="radio" name="gr_code2" value="GR002"/> 전자제품 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="gr_code2" value="GR003"/> 식품 
+				<br>
+				<input type="radio" name="gr_code2" value="GR004"/> 의약품 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="gr_code2" value="GR005"/> 생활용품 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="gr_code2" value="GR006"/> 가구 
+				<br>
+				<input type="radio" name="gr_code2" value="GR008"/> 문구류 &nbsp;&nbsp;&nbsp;
+				<input type="radio" name="gr_code2" value="GR009"/> 화장품 
+			</div>
+		</div>
+		<hr/>
+		<div class="row">
+			<div class="col-2"><strong>수정자명</strong></div>
+			<div class="col-4"><input type="text" name="upd_name" id="upd_name" class="form-control"/></div>
+		</div>
+	</div>
+</div>
+<input type="hidden" id="item_no">
+<div style="margin-top:2%; margin-left:2%;">
+<input type="button" class="btn btn-white" id="modifyBtn" onclick="modifyItem();" value="수정"/>
+<input type="button" class="btn btn-white" id="removeBtn" onclick="removeItem();" value="삭제"/>
+<input type="button" class="btn btn-white" id="cancelBn" onclick="closeDial($('#dialog2'))" value="취소"/>
+</div>
+<script>
+function modifyItem() {
+	var item_no = $('#item_no').val().trim();
+	var item_name = $('#item_name').val().trim();
+	var std_name = $('#std_name').val().trim();
+	var cp_name = $('#cp_name').val().trim();
+	var item_wgt = $('#item_wgt').val().trim();
+	var upd_name = $('#upd_name').val().trim();
+	var gb_code = $('input[name="gb_code2"]:checked').val();
+	var gr_code = $('input[name="gr_code2"]:checked').val();
+	var type_code = $('input[name="type_code2"]:checked').val();
+	if(item_name==""||std_name==""||cp_name==""||item_wgt==""||gb_code==""||gr_code==""||type_code==""||upd_name=="") {
+		alert("모든 정보를 입력해주세요.");
+		return;
+	}
+	$.ajax({
+		url : "<%=request.getContextPath()%>/CO/item/itemModify",
+		data : {item_no : item_no, item_name : item_name, std_name : std_name, cp_name : cp_name, item_wgt : item_wgt, gb_code : gb_code, gr_code : gr_code, type_code : type_code, upd_name : upd_name},
+		type : 'post',
+		success : function(res) {
+			alert("수정이 완료되었습니다.");
+			closeDial($('#dialog2'));
+			history.go(0);
+		}
+	})
+}
+function removeItem() {
+	var item_no = $('#item_no').val().trim();
+	if (confirm("해당 품목 정보를 삭제하시겠습니까?")) {
+		$.ajax({
+			url : "<%=request.getContextPath()%>/CO/item/itemRemove",
+			data : {item_no : item_no},
+			type : "post",
+			success : function(res) {
+				alert("삭제가 완료되었습니다.");
+				closeDial($('#dialog2'));
+				history.go(0);
+			}
+		});
+	}else{
+		return;
+	}
+}
+</script>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<!-- 인증 -->
+	<authentication-manager>
+		<authentication-provider ref="authenticator" />
+	</authentication-manager>
+
+
+	<beans:bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder">
+	</beans:bean>
+		
+	<beans:bean id="authenticator"
+				class="com.spring.AtoZ.security.CustomAuthenticationProvider"
+				p:serviceUseDAO-ref="serviceUseDAO" 
+	/>
+	<!-- 인허가 -->
+	<http pattern="/resources/**" security="none"/>
+	
+	<http use-expressions="true" pattern="/**">
+	
+		<!-- <scrf disabled="true" /> Spring security 4.x에 적용 -->
+		<access-denied-handler error-page="/serviceUse/accessDenied" />
+		<intercept-url pattern="/index/**" access="isAuthenticated()" />
+		<intercept-url pattern="/AL/**" access="isAuthenticated()" />
+		<intercept-url pattern="/WC/**" access="hasAnyRole('ROLE_WH, ROLE_CO, ROLE_WHCO')" />
+		<intercept-url pattern="/WH/**" access="hasAnyRole('ROLE_WH, ROLE_WHCO')" />
+		<intercept-url pattern="/CO/**" access="hasAnyRole('ROLE_CO, ROLE_WHCO')" />
+		<intercept-url pattern="/SY/**" access="hasAnyRole('ROLE_SY')" />
+		<intercept-url pattern="/**" access="permitAll" />
+		
+		
+		<form-login
+			login-page="/serviceUse/loginForm"
+			login-processing-url="/serviceUse/login"
+			username-parameter="id"
+			password-parameter="pwd"
+			default-target-url="/common/loginSuccess"
+			authentication-success-handler-ref="loginSuccessHandler"
+			authentication-failure-handler-ref="loginFailureHandler"
+		/>
+		<logout
+			logout-url="/serviceUse/logout"
+			invalidate-session="true"
+			logout-success-url="/homepage/home"
+			delete-cookies="JSESSIONID"
+		/>
+		
+		<session-management invalid-session-url="/serviceUse/loginTimeOut">
+		
+			<concurrency-control
+				expired-url="/serviceUse/loginExpired"
+				max-sessions="3"
+				session-registry-ref="sessionRegistry"
+			/>
+		</session-management>
+	</http>
+	<beans:bean id="loginSuccessHandler"
+				class="com.spring.AtoZ.security.LoginSuccessHandler"
+				p:defaultTargetUrl="/common/loginSuccess"
+				/>
+	<beans:bean id="loginFailureHandler" 
+				class="com.spring.AtoZ.security.LoginFailureHandler"
+				/>
+	<beans:bean id="sessionRegistry"
+				class="org.springframework.security.core.session.SessionRegistryImpl"
+				/>
+	<beans:bean id="sessionDestoryListener"
+				class="com.spring.AtoZ.security.SessionDestroyListener"
+				/>
+
+	
+</beans:beans>

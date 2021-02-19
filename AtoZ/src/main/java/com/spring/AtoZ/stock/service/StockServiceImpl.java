@@ -1,0 +1,143 @@
+package com.spring.AtoZ.stock.service;
+
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.spring.AtoZ.common.dto.PageMaker;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.stock.dao.StockDAO;
+import com.spring.AtoZ.stock.dto.StockCheckCommand;
+import com.spring.AtoZ.stock.dto.StockDetailCommand;
+import com.spring.AtoZ.stock.dto.StockListCommand;
+
+public class StockServiceImpl implements StockService{
+	private StockDAO stockDAO;
+	public void setStockDAO(StockDAO stockDAO) {
+		this.stockDAO = stockDAO;
+	}
+	
+	@Override
+	public Map<String, Object> getWhsStockList(SearchMap sm) throws SQLException{
+		List<StockListCommand> stockList = stockDAO.selectStockList(sm);
+		int max = stockDAO.stockCount(sm);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("stockList", stockList);
+		result.put("pageMaker", pm);
+		return result;
+	}
+
+	@Override
+	public Map<String, Object> getDetailStockList(SearchMap sm) throws SQLException {
+		List<StockListCommand> stockList = stockDAO.selectListByItemNo(sm);
+		int max = stockDAO.stockDetailCount(sm);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("stockList", stockList);
+		result.put("pageMaker", pm);
+		return result;
+	}
+	@Override
+	public Map<String, Object> getCoStockList(SearchMap sm) throws SQLException {
+		List<StockListCommand> stockList = stockDAO.selectCoStockList(sm);
+		int max = stockDAO.coStockCount(sm);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("stockList", stockList);
+		result.put("pageMaker", pm);
+		return result;
+	}
+	@Override
+	public Map<String, Object> getCoStockDetailList(SearchMap sm) throws SQLException {
+		List<StockDetailCommand> stockList = stockDAO.selectCoDetailList(sm);
+		int totalCnt = 0;
+		for(int i=0; i<stockList.size();i++) {
+			if(stockList.get(i).getType().equals("입고")) {
+				totalCnt += stockList.get(i).getReal_qty();
+			}else { // 실사 및 출고일 때는 변동수량 만큼 더하기
+				totalCnt += stockList.get(i).getCng_qty();
+			}
+		}
+		int max = stockDAO.coStockDetailCount(sm);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("totalCnt", totalCnt);
+		result.put("stockList", stockList);
+		result.put("pageMaker", pm);
+		return result;		
+	}
+	@Override
+	public Map<String, Object> getWhsStockCheckList(SearchMap sm) throws SQLException {
+		List<StockCheckCommand> stockList = stockDAO.selectStockCheckList(sm);
+		int max = stockDAO.stockCheckListCount(sm);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("stockList", stockList);
+		result.put("pageMaker", pm);
+		return result;
+	}
+	
+	@Override
+	public void modifyInventoryByCheck(List<StockCheckCommand> cmd) throws SQLException {
+		// 재고 실사 번호 가져와서 inv_no에 해당하는 재고 처리. + 해당 기업에 쪽지 보내기
+		for(int i=0; i<cmd.size(); i++) {
+			String rsn_code = cmd.get(i).getRsn_code();
+			int chk_no = cmd.get(i).getChk_no();
+			switch(rsn_code) {
+			case "변동없음" :
+				break;
+			case "위치" :
+				stockDAO.updateInvLocByCheck(chk_no);
+				break;
+			case "수량" :
+				stockDAO.updateInvQtyByCheck(chk_no);
+				stockDAO.registMsgByStockCheck(makeMsgContent(cmd.get(i)),chk_no);
+				break;
+			case "위치,수량" :
+				// 1.재고번호 새로 만들기 ( 2.기존 재고 수량 (-) : 적용안하기로. 
+				stockDAO.insertInvFromCheck(chk_no);
+				//stockDAO.updateInvQtyByDiv(chk_no);
+				break;
+			}
+			stockDAO.updateUpdYN(chk_no);
+		}		
+	}
+	
+	@Override
+	public Map<String, Object> getDetailStockListByInvNo(SearchMap sm) throws SQLException {
+		List<StockDetailCommand> stockList = stockDAO.selectStockHisByInvNo(sm);
+		int max = stockDAO.countStockHisByInvNo(sm);
+		PageMaker pm = new PageMaker();
+		pm.setCri(sm);
+		pm.setTotalCount(max);
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("stockList", stockList);
+		result.put("pageMaker", pm);
+		return result;
+	}
+	
+	public String makeMsgContent(StockCheckCommand cmd) {
+		String content = "";
+		content += "[실사 결과 안내] <br>";
+		content += "실사일 : " + cmd.getChk_ymd() + "<br>";
+		content += "품목번호 : " + cmd.getItem_no() + "<br>";
+		content += "품목명 : " + cmd.getItem_name() + "<br>";
+		content += "실사 전 수량 : " + cmd.getCur_qty() + "<br>";
+		content += "실사 수량 : " + cmd.getChk_qty() + "<br>";
+		content += "변동 수량 : " + (cmd.getChk_qty() - cmd.getCur_qty()) + "<br>";
+		content += "변동 수량이 재고에 반영됩니다.";		
+		return content;
+	}
+}

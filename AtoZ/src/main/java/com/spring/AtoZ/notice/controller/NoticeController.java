@@ -1,0 +1,236 @@
+package com.spring.AtoZ.notice.controller;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.spring.AtoZ.attch.dao.AttchDAO;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.notice.dto.NoticeModifyRequest;
+import com.spring.AtoZ.notice.dto.NoticeRegist;
+import com.spring.AtoZ.notice.service.NoticeService;
+import com.spring.AtoZ.vo.AttchVO;
+import com.spring.AtoZ.vo.ClientVO;
+import com.spring.AtoZ.vo.NoticeVO;
+
+@Controller
+public class NoticeController {
+	
+	@Autowired
+	private NoticeService noticeService;
+	
+	@Autowired
+	private AttchDAO attchDAO;
+	public void setAttchDAO(AttchDAO attchDAO) {
+		this.attchDAO = attchDAO;
+	}
+	
+	@Resource(name="fileUploadPath")
+	private String fileUploadPath;
+	
+	@RequestMapping("/AL/notice/list")
+	public ModelAndView noticeList(ModelAndView mnv, SearchMap sm,@RequestParam(defaultValue="") String searchType, @RequestParam(defaultValue="") String keyword )throws Exception {
+		String url = "notice/list.frame";
+		
+		sm.put("searchType", searchType);
+		sm.put("keyword", keyword);
+		sm.setUrl("/AL/notice/list");
+		Map<String, Object> dataMap = noticeService.getNoticeList(sm);
+		mnv.addAllObjects(dataMap);
+		mnv.setViewName(url);
+		return mnv;
+	}
+	
+	
+	@RequestMapping("/SY/notice/registForm")
+	public String registForm() {
+		String url = "notice/regist.pop";
+
+		return url;
+	}
+	
+	
+	// 공지사항 등록
+	@RequestMapping(value="/notice/regist", method=RequestMethod.POST, produces = "text/plain;charset=utf-8")
+	public void regist(NoticeRegist registReq, HttpServletRequest request, Model model, HttpServletResponse response, HttpSession session) throws Exception{
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		List<AttchVO> attchList = saveFile(registReq);
+		NoticeVO notice = registReq.toNoticeVO();
+		notice.setAdmin_id(loginUser.getId());
+		notice.setAttchList(attchList);
+		noticeService.write(notice);
+		
+		response.setContentType("text/html; charset=utf-8");
+		PrintWriter out = response.getWriter();
+		out.println("<script>");
+		out.println("alert('공지사항이 정상적으로 등록되었습니다.');");
+		out.println("location.href='"+request.getContextPath()+"/index/AL003';");
+		out.println("</script>");
+		out.close();
+		
+		model.addAttribute("attchList", attchList);
+			
+	}
+	//공지사항 상세보기
+	@RequestMapping("/AL/notice/detail")
+	@ResponseBody
+	public ResponseEntity<NoticeVO> detail(int ntc_no) throws Exception  {
+		NoticeVO notice = null;
+		notice = noticeService.getNotice(ntc_no);
+		List<AttchVO> attchList = notice.getAttchList();
+		if(attchList!=null) {
+			for(AttchVO attch : attchList) {
+				String fileName= attch.getFile_name().split("\\$\\$")[1];
+				attch.setFile_name(fileName);
+			}
+		}
+		return new ResponseEntity<NoticeVO>(notice, HttpStatus.OK);
+	}
+	//공지사항 파일 저장
+	private List<AttchVO> saveFile(NoticeRegist registReq) throws Exception {
+		String fileUploadPath = this.fileUploadPath;
+		
+		List<AttchVO> attachList = new ArrayList<AttchVO>();
+		
+		if(registReq.getUploadFile() != null) {
+			for(MultipartFile multi : registReq.getUploadFile()) {
+				if(!multi.isEmpty()) {	// 파일 등록하지 않았을 때 null처리
+					
+					String fileName = UUID.randomUUID().toString().replace("-", "")+"$$"+multi.getOriginalFilename();
+					File target = new File(fileUploadPath, fileName);
+					
+					if(!target.exists()) {
+						target.mkdirs();
+					}
+					
+					multi.transferTo(target);
+					
+					
+					AttchVO attch = new AttchVO();
+					attch.setUpload_path(fileUploadPath);
+					attch.setFile_name(fileName);
+					attch.setFile_type(fileName.substring(fileName.lastIndexOf('.')+1).toUpperCase());
+					
+					attachList.add(attch);
+				}
+			}
+		}
+		return attachList;
+	}
+	// 공지사항 수정 폼
+	@RequestMapping("/SY/notice/modifyForm")
+	@ResponseBody
+	public ResponseEntity<NoticeVO> modifyForm(int ntc_no) throws Exception  {
+		NoticeVO notice = null;
+		notice = noticeService.getNotice(ntc_no);
+		List<AttchVO> attchList = notice.getAttchList();
+		if(attchList!=null) {
+			for(AttchVO attch : attchList) {
+				String fileName= attch.getFile_name().split("\\$\\$")[1];
+				attch.setFile_name(fileName);
+			}
+		}
+		return new ResponseEntity<NoticeVO>(notice, HttpStatus.OK);
+	}
+	
+	// 공지사항 수정
+	@ResponseBody
+	@RequestMapping(value="/SY/notice/modify", method=RequestMethod.POST, produces = "text/plain;charset=utf-8")
+	public void modify(NoticeModifyRequest modifyReq, Model model, HttpSession session) throws Exception{
+		String fileUploadPath = this.fileUploadPath;
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		// 삭제된 파일 삭제
+		if(modifyReq.getDeleteFile()!=null && modifyReq.getDeleteFile().length >0) {
+			for(int file_no : modifyReq.getDeleteFile()) {
+				String fileName = attchDAO.selectAttchByFile_no(file_no).getFile_name();
+				File deleteFile = new File(fileUploadPath, fileName);
+				attchDAO.deleteAttach(file_no); //DB삭제
+				if(deleteFile.exists()) {
+					deleteFile.delete();
+				}
+			}
+		}
+		
+		List<AttchVO> attchList = saveFile(modifyReq);
+		
+		NoticeVO notice = modifyReq.toNoticeVO();
+		notice.setUpd_id(loginUser.getId());
+		notice.setAttchList(attchList);
+		noticeService.modify(notice);
+		
+		model.addAttribute("attchList", attchList);
+				
+	}
+	
+	// 공지사항 삭제
+	@ResponseBody
+	@RequestMapping("/SY/notice/remove")
+	public void remove(int ntc_no) throws Exception{
+		List<AttchVO> attchList = attchDAO.selectAttchByNtc_no(ntc_no);
+		if(attchList != null) {
+			for(AttchVO attch : attchList) {
+				File target = new File(attch.getUpload_path(), attch.getFile_name());
+				if(target.exists()) {
+					target.delete();
+				}
+			}
+		}
+		noticeService.remove(ntc_no);
+	}
+	
+	@RequestMapping("/AL/notice/getFile")
+	public ResponseEntity<byte[]> getFile(int file_no) throws Exception{
+		InputStream in = null;
+		ResponseEntity<byte[]> entity = null;
+		
+		AttchVO attch = attchDAO.selectAttchByFile_no(file_no);
+		
+		String fileUploadPath = this.fileUploadPath;
+		String fileName = attch.getFile_name();
+		
+		try {
+			in = new FileInputStream(fileUploadPath+File.separator+fileName);
+			
+			fileName = fileName.substring(fileName.indexOf("$$")+2);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+			headers.add("Content-Disposition", "attachment;filename=\""+new String(fileName.getBytes("utf-8"),"ISO-8859-1")+"\"");
+			
+			entity = new ResponseEntity<byte[]>(IOUtils.toByteArray(in), headers, HttpStatus.CREATED);
+		} catch (IOException e) {
+			e.printStackTrace();
+			entity = new ResponseEntity<byte[]>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}finally {
+			in.close();
+		}
+		return entity;
+	}
+	
+	
+}

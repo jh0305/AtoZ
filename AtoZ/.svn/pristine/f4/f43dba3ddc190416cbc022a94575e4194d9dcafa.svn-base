@@ -1,0 +1,127 @@
+package com.spring.AtoZ.item.dao;
+
+import java.sql.SQLException;
+import java.util.List;
+
+import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.session.SqlSession;
+
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.item.dto.CooperatorNameCheckCommand;
+import com.spring.AtoZ.item.dto.ItemCommand;
+import com.spring.AtoZ.item.dto.ItemDetailCommand;
+import com.spring.AtoZ.item.dto.ItemRegistCommand;
+import com.spring.AtoZ.item.dto.StandardCodeCheckCommand;
+import com.spring.AtoZ.item.dto.StandardNameCheckCommand;
+import com.spring.AtoZ.item.dto.UpdateStandardCommand;
+import com.spring.AtoZ.vo.CooperatorVO;
+import com.spring.AtoZ.vo.StandardVO;
+
+public class ItemDAOImpl implements ItemDAO {
+	private SqlSession sqlSession;
+	public void setSqlSession(SqlSession sqlSession) { 
+		this.sqlSession = sqlSession;
+	}
+	@Override
+	public List<ItemCommand> selectSearchItemList(SearchMap sm) throws SQLException {
+		int offset = sm.getPageStartRowNum();
+		int limit = sm.getPerPage();
+		RowBounds rowBounds = new RowBounds(offset, limit);
+		List<ItemCommand> itemlist = sqlSession.selectList("Item-Mapper.selectSearchItemList", sm.getSearch(), rowBounds);
+		return itemlist;
+	}
+	@Override
+	public int selectItemListCount(SearchMap sm) throws SQLException {
+		int cnt = 0;
+		cnt = sqlSession.selectOne("Item-Mapper.selectItemListCount", sm.getSearch());
+		return cnt;
+	}
+	@Override
+	public ItemCommand selectItemDetail(ItemDetailCommand idc) throws SQLException {
+		ItemCommand item = sqlSession.selectOne("Item-Mapper.selectItemDetail", idc);
+		return item;
+	}
+	@Override
+	public String selectstdcode(StandardCodeCheckCommand sccc) throws SQLException {
+		String std_code = sqlSession.selectOne("Item-Mapper.selectstdcode", sccc);
+		return std_code;
+	}
+	@Override
+	public int selectStandardSequenceNextValue() throws SQLException {
+		int seq_num = sqlSession.selectOne("Item-Mapper.selectStandardSequenceNextValue");
+		return seq_num;
+	}
+	@Override
+	public void insertStandard(StandardVO standard) throws SQLException {
+		sqlSession.update("Item-Mapper.insertStandard", standard);
+	}
+	@Override
+	public List<StandardVO> selectStandardList(SearchMap sm) throws SQLException {
+		int offset = sm.getPageStartRowNum();
+		int limit = sm.getPerPage();
+		RowBounds rowBounds = new RowBounds(offset,limit);
+		List<StandardVO> standardList = sqlSession.selectList("Item-Mapper.selectStandardList", sm.getSearch(), rowBounds);
+		return standardList;
+	}
+	@Override
+	public int selectStandardListCount(SearchMap sm) throws SQLException {
+		int cnt = 0;
+		cnt = sqlSession.selectOne("Item-Mapper.selectStandardListCount", sm.getSearch());
+		return cnt;
+	}
+	@Override
+	public StandardVO selectStandardByStdNo(int std_no) throws SQLException {
+		StandardVO standard = sqlSession.selectOne("Item-Mapper.selectStandardByStdNo", std_no);
+		return standard;
+	}
+	@Override
+	public void updateStandard(UpdateStandardCommand usc) throws SQLException {
+		sqlSession.update("Item-Mapper.updateStandard", usc);
+	}
+	@Override
+	public void deleteStandard(int std_no) throws SQLException {
+		sqlSession.update("Item-Mapper.deleteStandard", std_no);
+	}
+	@Override
+	public List<CooperatorVO> selectCooperatorList(SearchMap sm) throws SQLException {
+		int offset = sm.getPageStartRowNum();
+		int limit = sm.getPerPage();
+		RowBounds rowBounds = new RowBounds(offset,limit);
+		List<CooperatorVO> cooperatorList = sqlSession.selectList("Item-Mapper.selectCooperatorList", sm.getSearch(), rowBounds);
+		return cooperatorList;
+	}
+	@Override
+	public int selectCooperatorListCount(SearchMap sm) throws SQLException {
+		int cnt = 0;
+		cnt = sqlSession.selectOne("Item-Mapper.selectCooperatorListCount",sm.getSearch());
+		return cnt;
+	}
+	@Override
+	public int selectItemSequenceNextValue() throws SQLException {
+		int seq_num = sqlSession.selectOne("Item-Mapper.selectItemSequenceNextValue");
+		return seq_num;
+	}
+	@Override
+	public void insertItem(ItemRegistCommand irc) throws SQLException {
+		sqlSession.update("Item-Mapper.insertItem",irc);
+	}
+	@Override
+	public void updateItem(ItemRegistCommand irc) throws SQLException {
+		sqlSession.update("Item-Mapper.updateItem", irc);
+	}
+	@Override
+	public void deleteItem(int item_no) throws SQLException {
+		sqlSession.update("Item-Mapper.deleteItem", item_no);
+	}
+	@Override
+	public StandardVO selectStandard(StandardNameCheckCommand sncc) throws SQLException {
+		StandardVO standard = sqlSession.selectOne("Item-Mapper.selectStandard", sncc);
+		return standard;
+	}
+	@Override
+	public CooperatorVO selectCooperator(String cp_name) throws SQLException {
+		CooperatorVO cooperator = sqlSession.selectOne("Item-Mapper.selectCooperator", cp_name);
+		return cooperator;
+	}
+	
+}

@@ -1,0 +1,297 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<script>
+	function getRegistForm(){
+		$("#inWH").val("");
+		$("#search_wh_name").val("");
+		$("#input_mgr").val("");
+		$('input[name="ordr_deli_ymd"]').val("");
+		$("#myTbody").empty();
+		
+		var code = '<tr class="item-tr item_false text-center"><td><svg class="icon_Minus myIcon" style="color: #dedede; cursor: pointer;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line></svg></td><td name="item_code" class="item-code col-md-2"><div class="col-12 text-center"><div onclick="goFindElement(this);openItemSearch(this);" style="border: 1px solid #D1D4D7; border-radius:3px; background-color:#F3F6FA; cursor: pointer;"><svg style="margin: 7px 0px;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="10" cy="10" r="7"></circle><line x1="21" y1="21" x2="15" y2="15"></line></svg></div></div></td><td name="item_name" class="item-name col-md-2"></td><td name="cprt_code" class="cprt-code col-md-2"></td><td name="cprt_name" class="cprt-name col-md-2"></td><td name="item_std" class="item-std col-md-2"></td><td name="item_ea" class="item-ea" style="width:17%"><input value="0" style="padding: 3px 0px; text-align:center; margin:auto; width:50%;" maxlength="3" type="text" class="item_ea_value form-control"></td></tr>'; 
+		$("#myTbody").append(code);
+	}
+	function ymd_check(th){
+		var req_ymd;
+		var req_ymd_after;
+		var deli_ymd;
+		var deli_ymd_after;
+		
+		req_ymd = $("#req_ymd").val().replace(/\-/g,'');
+		req_ymd_after = $("#req_ymd_after").val().replace(/\-/g,'');
+		deli_ymd = $("#deli_ymd").val().replace(/\-/g,'');
+		deli_ymd_after = $("#deli_ymd_after").val().replace(/\-/g,'');
+		
+		if(req_ymd != "" && req_ymd_after != ""){
+			if(req_ymd > req_ymd_after){
+				alert("선택 불가능 날짜 입니다. 다시 선택 하세요.");
+				if(th.id == "req_ymd"){
+					$("#req_ymd").val("");
+				}
+				if(th.id == "req_ymd_after"){
+					$("#req_ymd_after").val("");
+				}
+				return;
+			}
+		}
+		
+		if(deli_ymd != "" && deli_ymd_after != ""){
+			if(deli_ymd > deli_ymd_after){
+				alert("선택 불가능 날짜 입니다. 다시 선택 하세요.");
+				if(th.id == "deli_ymd"){
+					$("#deli_ymd").val("");
+				}
+				if(th.id == "deli_ymd_after"){
+					$("#deli_ymd_after").val("");
+				}
+				return;
+			}
+		}
+		
+		if(deli_ymd != "" && req_ymd != ""){
+			if(req_ymd > deli_ymd){
+				alert("발주일자 및 납기일자 범위지정 오류. 다시 선택 하세요.");
+				if(th.id == "deli_ymd"){
+					$("#deli_ymd").val("");
+				}
+				if(th.id == "req_ymd"){
+					$("#req_ymd").val("");
+				}
+				return;
+			}
+		}
+		
+		return true;
+	}
+	//메인 체크박스 클릭시 하위 체크박스를 모두 클릭처리 한다.
+	var flag = "N";
+	var tr = $("#list_tbody").children();
+	function goCheck(th){
+		$("input[name='checkReq']").prop("checked",$(th).prop("checked"));			
+	};
+	
+	// 체크된 서브박스 갯수 상태에 따라 메인 체크박스 온오프 한다.
+	function goCheckCnt(){
+		var cnt = 0;
+		var checks = $("input[name='checkReq']");		
+		var len = checks.length;
+			
+		$.each(checks, function(i){
+			if(checks[i].checked){
+				cnt++;
+			}
+		});
+		if(cnt < len){
+			$("#main_check").prop("checked", false);
+		} else if (cnt == len){
+			$("#main_check").prop("checked", true);
+		}
+	};
+	
+	// 검색 조건에 해당하는 발주 리스트를 검색한다.
+	var req_ymd = " ";
+	var req_ymd_after = " ";
+	var deli_ymd = " ";
+	var deli_ymd_after = " ";
+	function goOrderListSearch(){
+		// 검색 값
+		req_ymd = $("input[id='req_ymd']").val().split("-");
+		req_ymd = (req_ymd[0] + req_ymd[1] + req_ymd[2]);
+		req_ymd_after = $("input[id='req_ymd_after']").val().split("-");
+		req_ymd_after = (req_ymd_after[0] + req_ymd_after[1] + req_ymd_after[2]);
+		var ord_mngr = $("input[name='ord_mngr']").val();
+		
+		deli_ymd = $("input[id='deli_ymd']").val().split("-");
+		deli_ymd = (deli_ymd[0] + deli_ymd[1] + deli_ymd[2]);
+		deli_ymd_after = $("input[id='deli_ymd_after']").val().split("-");
+		deli_ymd_after = (deli_ymd_after[0] + deli_ymd_after[1] + deli_ymd_after[2]);
+		var wh_code = $("input[name='wh_code']").val();
+		
+		if(req_ymd == "undefined" || req_ymd == "undefinedundefined" || req_ymd == " undefinedundefined"){
+			req_ymd = " ";
+		}
+		if(req_ymd_after == "undefined" || req_ymd_after == "undefinedundefined"){
+			req_ymd_after = " ";
+		}
+		if(deli_ymd == "undefined" || deli_ymd == "undefinedundefined"){
+			deli_ymd = " ";
+		}
+		if(deli_ymd_after == "undefined" || deli_ymd_after == "undefinedundefined"){
+			deli_ymd_after = " ";
+		}
+		
+		var data = {
+			req_ymd : req_ymd,
+			req_ymd_after : req_ymd_after,
+			ord_mngr : ord_mngr,
+			deli_ymd : deli_ymd,
+			deli_ymd_after : deli_ymd_after,
+			wh_code : wh_code
+		};
+
+		$.ajax({
+			url : "<%=request.getContextPath()%>/CO/order/getOrderListWhere",
+			data : data,
+			type : 'post',
+			dataType : "json",
+			success : function(res) {
+				// 티바디 를 재구성한다.
+				$("tbody[id='list_tbody']").empty();
+				$.each(res, function(i){
+					var sts_code = res[i].sts_code
+					var sts_html = "";
+					if(sts_code == "PR001"){
+						sts_html = '<td name="'+sts_code+'" class="sts_code text-center">요청</td>';
+					}else if(sts_code == "PR002"){
+						sts_html = '<td name="'+sts_code+'" class="sts_code text-center">수락</td>';
+					}else if(sts_code == "PR003"){
+						sts_html = '<td name="'+sts_code+'" class="sts_code text-center">입고대기</td>';
+					}else if(sts_code == "PR004"){
+						sts_html = '<td name="'+sts_code+'" class="sts_code text-center">입고완료</td>';
+					}else{
+						sts_html = '<td name="'+sts_code+'" class="sts_code text-center">거부</td>';
+					}
+					
+					var code = "";
+					code += '<tr onclick="open_modify_dialog(this);" class="list_tr">';
+					code += '	<td onclick="event.cancelBubble=true"><input type="hidden" name="ord_no" value="' +res[i].ord_no+ '"/><input onclick="goCheckCnt();" name="checkReq" class="form-check-input m-0 align-middle" type="checkbox" aria-label="Select invoice"></td>';	
+					code += '	<td name="" class=" text-center">' + res[i].req_ymd.substr(0, 4) + "-" + res[i].req_ymd.substr(4, 2) + "-" + res[i].req_ymd.substr(6, 2) + '</td>';	
+					code += '	<td name="" class=" text-center">' + res[i].ord_mngr + '</td>';	
+					code += '	<td name="" class=" text-center">' + res[i].wh_name + '</td>';	
+					code += '	<td name="" class=" text-center">' + res[i].deli_ymd.substr(0, 4) + "-" + res[i].deli_ymd.substr(4, 2) + "-" +res[i].deli_ymd.substr(6, 2) + '</td>';	
+					code += '	'+sts_html+'';	
+					code += '</tr>';
+					$("tbody[id='list_tbody']").append(code);
+					
+					$("#main_check").prop("checked", false);
+				});
+			},
+			error : function(req) {
+				alert("상태 : " + req.status);
+			}
+		});
+	};
+	
+	// 삭제 버튼 클릭시 선택된 행의 발주를 취소(삭제)한다.
+	function removeOrder(){
+		if(!(confirm("선택된 발주 요청을 취소하시겠습니까?"))){
+			return;
+		}
+		var boxs = $("input[name='checkReq']");
+		var arr = "";
+		var cnt = 0;
+		
+		for(var box of boxs){
+			if($(box).prop("checked")){
+				if(cnt > 0 ){
+					arr += ",";
+				}
+				if($(box).siblings('input[name="ord_no"]').parents('tr').find('td').last().text() != '요청'){
+					alert("요청 상태인 발주만 취소 할 수 있습니다.");
+					return;
+				}
+				arr += $(box).siblings('input[name="ord_no"]').val();
+				cnt++;
+			}
+		}
+		
+		if(cnt == 0){
+			alert("선택된 발주 내역이 없습니다.");
+			return;
+		}
+		
+		$.ajax({
+			url : "<%=request.getContextPath()%>/CO/order/removeOrder",
+			data : {arr : arr},
+			type : 'get',
+			dateType : "integer",
+			success : function(res) {
+				if(res > 0){
+					location.reload();
+				}
+			},
+			error : function(req) {
+				alert("상태 : " + req.status);
+			}
+		});
+	}
+	
+	// 창고 검색 팝업 오픈 액션 함수
+	function open_whSearch(th){
+		th_name      = $(th).attr("name");
+		th_wh_code = $(th).siblings("input")
+		th_wh_name = $(th)
+		
+		openDial($('#whSearch'), 480, 600, true);
+	}
+	
+	
+	var pick_modify_ord_no = null;
+	function open_modify_dialog(th){
+		
+		pick_modify_ord_no = $(th).find('input[name="ord_no"]').val();
+		
+		var modify_ord_no = $(th).find('input[name="ord_no"]').val();
+		
+		$.ajax({
+			url : "<%=request.getContextPath()%>/CO/order/getModifyForm",
+			data : {
+				"ord_no" : modify_ord_no
+			},
+			datatype : "json",
+			type : "get",
+			success : function(res){
+				var req_ymd = res.order.req_ymd;
+				req_ymd = req_ymd.substring(0,4) + "-" + req_ymd.substring(4,6) + "-" + req_ymd.substring(6,8);
+				
+				var ord_mngr = res.order.ord_mngr;
+				
+				var deli_ymd = res.order.deli_ymd;
+				deli_ymd = deli_ymd.substring(0,4) + "-" + deli_ymd.substring(4,6) + "-" + deli_ymd.substring(6,8);
+				
+				var wh_code = res.order.wh_name;
+				
+				$('input[id="modify_req_ymd"]').val(req_ymd);
+				$('input[id="modify_ord_mngr"]').val(ord_mngr);
+				$('input[id="modify_deli_ymd"]').val(deli_ymd);
+				$('input[name="modify_wh_code"]').val(wh_code);
+				
+				var items = res.orderDetailCommand
+				
+				$("#modify_tbody").empty();
+				for(item of items){
+					var code = "";
+					code += '<tr class="item-tr item_true text-center">'; 
+					code += '	<td name="item_code" class="item-code">'+item.item_no+'</td>';
+					if(item.item_name.length > 9){
+						item.item_name = item.item_name.substr(0, 9) + "\267\267\267"
+					}
+					code += '	<td name="item_name" class="item-name">'+item.item_name+'</td>';
+					code += '	<td name="cprt_code" class="cprt-code">'+item.cp_code+'</td>';
+					code += '	<td name="cprt_name" class="cprt-name">'+item.cp_name+'</td>';
+					code += '	<td name="item_std" class="item-std">'+item.std_name+'</td>';
+					code += '	<td name="item_ea" class="item-ea"><input readonly value="'+item.qty+'" style="background:white; padding: 3px 0px; text-align:center; margin:auto; width:50%;" maxlength="3" type="text" class="item_ea_value form-control"></td>';
+					code += '</tr>';
+					
+					$("#modify_tbody").append(code);
+					
+					var height = items.length;
+					
+					height = (198 + height * 45)
+					 
+					if(height > 638){
+						height = 638;
+					}
+					
+					openDial($('#order_modify_dialog'), 1224, height);
+				}
+				
+			},
+			error : function(req) {
+				alert("에러 : " + req.status);
+			}
+		});
+		
+		
+	}
+</script>

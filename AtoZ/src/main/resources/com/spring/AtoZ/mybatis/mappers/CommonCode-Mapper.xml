@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CommonCode-Mapper">
+	
+	
+	<select id="selectCodeTypeList" resultType="coCode" >
+		SELECT *
+		FROM cm_type
+		ORDER BY type_code
+	</select>
+	
+	<select id="selectDuplicationType" resultType="int" >
+		SELECT COUNT(*)
+		FROM cm_type
+		WHERE type_code = #{type_code} or type_name = #{type_name}
+	</select>
+	
+	<select id="selectDuplicationCode" resultType="int" >
+		SELECT COUNT(*)
+		FROM cm_code
+		WHERE cm_code = #{cm_code} or (cm_name = #{cm_name} AND type_code = #{type_code})
+	</select>
+	
+	<select id="selectDuplicationTypeForList" resultType="int" >
+		SELECT COUNT(*)
+		FROM cm_type
+		WHERE type_code != #{type_code} AND type_name = #{type_name}
+	</select>
+	
+	<select id="selectDuplicationCodeForList" resultType="int" >
+		SELECT COUNT(*)
+		FROM cm_code
+		WHERE cm_code != #{cm_code} AND cm_name = #{cm_name} AND type_code = #{type_code}
+	</select>
+	
+	<select id="selectTypeListByAct" resultType="coCode" >
+		SELECT *
+		FROM cm_type
+		WHERE act_yn = 1
+		ORDER BY type_code
+	</select>
+	
+	<select id="selectCodeListByType" resultType="coCode" >
+		SELECT *
+		FROM cm_code
+		WHERE type_code = #{type_code}
+		ORDER BY cm_code
+	</select>
+	
+	<update id="updateCodeType">
+		UPDATE cm_type
+		SET type_name = #{type_name}, act_yn = #{act_yn}
+		WHERE type_code = #{type_code}
+	</update>
+	
+	<update id="updateCode">
+		UPDATE cm_code
+		SET cm_name = #{cm_name}, act_yn = #{act_yn}
+		WHERE cm_code = #{cm_code}
+	</update>
+	
+	<update id="insertCodeType">
+		INSERT INTO cm_type (type_code, type_name, act_yn)
+		values(#{type_code}, #{type_name}, 1)
+	</update>
+	
+	<update id="insertCode">
+		INSERT INTO cm_code (cm_code ,cm_name, type_code, act_yn)
+		values(#{cm_code}, #{cm_name}, #{type_code}, 1)
+	</update>
+	
+</mapper>

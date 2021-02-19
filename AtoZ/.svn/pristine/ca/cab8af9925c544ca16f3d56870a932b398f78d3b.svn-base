@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Contract-Mapper">
+
+	<sql id="search">
+		<if test="searchType == 'cl_name'.toString()">
+			and cl_name like '%'||#{keyword}||'%'
+		</if>
+		<if test="searchType == 'wh_addr'.toString()">
+			and wh_addr like '%'||#{keyword}||'%'
+		</if>
+	</sql>
+	
+	<sql id="whorco">
+		<if test="co_code != null">
+			and cl_code = WH_code and co_code = #{co_code}
+		</if>
+		<if test="wh_code != null">
+			and cl_code = co_code and wh_code = #{wh_code}
+		</if>
+	</sql>
+	<sql id="rwhorco">
+		<if test="co_code != null">
+			and c.wh_code=l.cl_code and co_code = #{co_code}
+		</if>
+		<if test="wh_code != null">
+			and c.co_code = l.cl_code and wh_code = #{wh_code}
+		</if>
+	</sql>
+	<sql id="forCRTab">
+		<if test="cm_code != ''">
+			and cm_code = #{cm_code}
+		</if>
+	</sql>
+	<sql id="division">
+		<if test="co_code != null">
+			and co_code = #{co_code}
+		</if>
+		<if test="wh_code!=null">
+			and wh_code = #{wh_code}
+		</if>
+	</sql>
+	<sql id="reqDiv">
+		<if test="wh_code != null">
+			and aa.co_code = cl.cl_code
+		</if>
+		<if test="co_code!=null">
+			and aa.wh_code = cl.cl_code
+		</if>
+	</sql>
+	<sql id="isRegist">
+		<if test="sts_code == 'CR002'">
+			, cr_ymd = TO_CHAR(sysdate,'YYYYMMDD'), exp_ymd = CONCAT(TO_CHAR(sysdate,'YYYY') + #{pre_priod}, TO_CHAR(SYSDATE,'MMDD')) 
+		</if>
+	</sql>
+	<!-- 시스템과 계약된 물류센터 목록 -->
+	<select id="selectWhsList" parameterType="str" resultType="whslist">
+		SELECT c.*, d.tot_area, rownum
+		FROM (SELECT cl_code, cl_name, wh_addr, cl_ceo, cl_tel, cl_email, cl_regno
+        	FROM client 
+        	WHERE (cl_type='ROLE_WH') and sts_code = 'CR002') c, (SELECT sum(df_area) tot_area, wh_code FROM dong_floor GROUP BY wh_code) d
+		WHERE c.cl_code = d.wh_code
+		and NOT EXISTS (SELECT 1 FROM c2c_contract WHERE co_code = #{co_code} and wh_code = c.cl_code and sts_code in ('CR001', 'CR002'))
+		<include refid="search" />
+	</select>
+	
+	<!-- 상세 물류센터 동/구역별 계약가능 면적 -->
+	<!-- 취급유형 가져오기 -->
+	<select id="selectTypeList" resultType="detailArea">
+		SELECT a.cm_code, c.cm_name
+		FROM 
+			(Select cm_code
+			from wh_zone
+			where wh_code = #{wh_code} and co_code is null and up_no = -1
+			GROUP BY cm_code) a, cm_code c
+		WHERE a.cm_code = c.cm_code
+	</select>
+	<!-- 구역 가져오기 -->
+	<select id="selectZone" parameterType="zone" resultType="str">
+		SELECT wz_no, wz_area 
+		FROM wh_zone
+		WHERE wh_code = #{wh_code} and co_code is null and cm_code=#{cm_code} and dong_name=#{dong_name} and floor_name=#{floor_name}
+	</select>
+	<!-- 면적 가져오기 -->
+	<select id="selectArea" parameterType="java.util.Map" resultType="zone">
+		SELECT wz_no, wz_area, wz_no
+		FROM wh_zone
+		WHERE wh_code = #{wh_code} and cm_code= #{cm_code} and co_code is null and up_no = -1
+	</select>
+	
+	<!-- 특정 면적 가져오기 -->
+	<select id="selectThisArea" resultType="int">
+		SELECT wz_area
+		FROM wh_zone
+		WHERE wz_no = #{wz_no}
+	</select>
+	
+	<!-- 물류센터 첨부파일 -->
+	<select id="selectWhsPictures">
+		SELECT pic_name	FROM wh_picture WHERE wh_code = #{wh_code}
+	</select>
+	
+	<!-- 기업센터간 계약 등록 -->
+	<insert id="insertC2CContract" parameterType="c2c">
+		<selectKey keyProperty="cc_no" resultType="int" order="BEFORE">		
+			SELECT c2c_contract_seq.nextval as cc_no FROM dual
+		</selectKey>
+		INSERT INTO c2c_contract (cc_no, co_code, wh_code, cr_area, sts_code, pre_priod, reg_date)
+		VALUES(#{cc_no}, #{co_code}, #{wh_code}, #{cr_area}, #{sts_code}, #{pre_priod}, SYSDATE)
+	</insert>
+	<!-- 계약 상세 등록 -->
+	<insert id="insertCRDetail" parameterType="crdetail">
+		<selectKey keyProperty="cd_no" resultType="int" order="BEFORE">
+			SELECT cr_detail_seq.nextval as cd_no FROM dual
+		</selectKey>
+		INSERT INTO cr_detail (cd_no, cc_no, wz_no)
+		VALUES(#{cd_no}, #{cc_no}, #{wz_no})
+	</insert>
+	
+	<!-- 계약요청상태상세관리 등록(계약등록시, 계약요청상태변경시) -->
+	<insert id="insertDetailMng" parameterType="detailMng">
+		<selectKey keyProperty="dm_no" resultType="int" order="BEFORE">
+			SELECT detail_mng_seq.nextval as dm_no FROM dual
+		</selectKey>
+		INSERT INTO detail_mng (dm_no, cc_no, cm_code, reg_date, cl_code, dm_content)
+		VALUES(#{dm_no}, #{cc_no}, #{cm_code}, sysdate, #{cl_code}, #{dm_content})
+	</insert>
+	
+	<!-- 계약 현황 보기 -->
+	<select id="selectContractList" parameterType="str" resultType="crList">
+		SELECT rownum, cc_no, cl_code, cl_name, TO_CHAR(TO_DATE(cr_ymd,'YYYYMMDD'),'YYYY-MM-DD') cr_ymd, TO_CHAR(TO_DATE(exp_ymd,'YYYYMMDD'),'YYYY-MM-DD') exp_ymd, cr_area, cm_name, DECODE(TO_CHAR(reg_date,'YYYY-MM-DD'),TO_CHAR(SYSDATE,'YYYY-MM-DD'),TO_CHAR(reg_date,'HH24:mm'),TO_CHAR(reg_date,'YYYY-MM-DD')) reg_date
+		FROM c2c_contract cc, client, cm_code
+		WHERE cm_code = cc.sts_code
+		<include refid="search" />
+		<include refid="whorco" />
+		<include refid="forCRTab" />
+	</select>
+	<!-- 계약 상세 보기 -->
+	<!-- <select id="selectContractDetail" resultType="crcmd" parameterType="int">
+		SELECT cl_name, TO_CHAR(TO_DATE(cr_ymd,'YYYYMMDD'),'YYYY-MM-DD') cr_ymd, TO_DATE(exp_ymd, 'YYYYMMDD') exp_ymd, cc.cc_no, cd.cd_area, cc.cr_area, cm_name, cc.pre_priod, DECODE(TO_CHAR(cc.reg_date,'YYYY-MM-DD'),TO_CHAR(SYSDATE, 'YYYY-MM-DD'),TO_CHAR(cc.reg_date, 'YYYY-MM-DD HH24:mm'), TO_CHAR(cc.reg_date,'YYYY-MM-DD')) reg_date
+		FROM c2c_contract cc, cr_detail cd, client cl, cm_code cm
+		WHERE cc.cc_no = cd.cc_no and cl.cl_code = cc.co_code and cd.type_code = cm.cm_code and cc.cc_no = #{cc_no}
+	</select> -->
+	<select id="selectContractDetail" resultType="crcmd" parameterType="java.util.Map">
+		SELECT aa.co_code, aa.cc_dsc, aa.dm_no, aa.wh_code, NVL(aa.mnth_chrg,-1) mnth_chrg, aa.pre_priod, aa.reg_date, aa.cc_no, DECODE(aa.exp_ymd, NULL, 'N', TO_CHAR(TO_DATE(aa.exp_ymd,'YYYYMMDD'),'YYYY-MM-DD'))exp_ymd, DECODE(aa.cr_ymd,null,'N',TO_CHAR(TO_DATE(aa.cr_ymd,'YYYYMMDD'),'YYYY-MM-DD')) cr_ymd, aa.cr_area, cm.cm_name, cl.cl_name, wz.wz_loc, c.cm_name type_name, wz.wz_area, aa.dm_content, aa.cl_code, cl.wh_addr
+		FROM
+			(SELECT a.*
+			FROM
+				(SELECT dm_no, cc.co_code, cc.wh_code, dm.reg_date, dm.cm_code, dm.cc_no, cc.exp_ymd, cc.cr_ymd, cc.cr_area, cc.mnth_chrg, cc.pre_priod, dm.dm_content, dm.cl_code, cc.cc_dsc
+				FROM detail_mng dm, c2c_contract cc
+				WHERE dm.cc_no = cc.cc_no and cc.cc_no = #{cc_no}) a
+				) aa, client cl, cm_code cm, cr_detail cd, wh_zone wz, cm_code c
+		WHERE aa.cm_code = cm.cm_code and aa.cc_no = cd.cc_no and cd.wz_no = wz.wz_no and c.cm_code = wz.cm_code <include refid="reqDiv" />
+        order by reg_date desc
+	</select>
+	
+	
+	<select id="selectReqContractList" resultType="reqcrcmd">
+		SELECT rownum, c.co_code, d.cc_no, DECODE(TO_CHAR(d.reg_date,'YYYY-MM-DD'),TO_CHAR(SYSDATE,'YYYY-MM-DD'),TO_CHAR(d.reg_date,'HH24:mm'),TO_CHAR(d.reg_date,'YYYY-MM-DD')) reg_date, d.cm_code, m.cm_name, l.cl_name, c.cr_area, c.pre_priod
+		FROM detail_mng d, c2c_contract c, cm_code m, client l
+		WHERE dm_no IN (
+    		SELECT max(dm_no) dm_no
+    		FROM c2c_contract cc, detail_mng dm, cm_code cm
+    		WHERE cc.cc_no = dm.cc_no 
+    		AND cc.sts_code = 'CR001' 
+    		GROUP BY dm.cc_no)
+		AND d.cc_no = c.cc_no AND d.cm_code = m.cm_code <include refid="rwhorco" />
+		<include refid="search" />
+	</select>
+	<!--c2c_contract 테이블 월사용료 등록 -->
+	<update id="updateMnthChrg" parameterType="java.util.Map">
+		UPDATE c2c_contract SET mnth_chrg = #{mnth_chrg} WHERE cc_no = #{cc_no}
+	</update>
+	<!-- detail_mng 테이블 메모 수정 -->
+	<update id="updateDetailMng" parameterType="java.util.Map">
+		UPDATE detail_mng SET dm_content = #{dm_content} WHERE dm_no = #{dm_no}
+	</update>
+	<!-- c2c_contract 계약 등록 / 해지, 반려 등 -->
+	<update id="updateContract">
+		UPDATE c2c_contract SET sts_code = #{sts_code}, cc_dsc = #{cc_dsc} <include refid="isRegist" /> WHERE cc_no = #{cc_no}
+	</update>
+	<!-- cr_detail wz_no 추출  -->
+	<select id="selectWzNos" resultType="int">
+		SELECT wz_no FROM cr_detail WHERE cc_no = #{cc_no}
+	</select>
+	<!--계약 해지/만료시  -->
+	<update id="updateWHZone">
+		UPDATE wh_zone SET co_code = null WHERE wz_no = #{wz_no} and co_code = #{co_code}
+	</update>
+	<!-- c2c_contract 계약시!!! -->
+	<update id="updateCoCode">
+		UPDATE wh_zone SET co_code = #{co_code} WHERE wz_no = #{wz_no} 
+	</update>
+	
+</mapper>
+
+
+			

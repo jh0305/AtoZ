@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Picking-Mapper">
+
+	<select id="selectInvByItem" resultType="com.spring.AtoZ.strategy.dto.StrategyStockCommand">
+		SELECT inv_no, item_no, co_code, inv_loc, wh_code, inv_qty
+		FROM inventory
+		WHERE item_no = #{item_no} AND co_code = #{co_code} AND wh_code = #{wh_code} AND sts_code = 'IS001'
+		ORDER BY in_ymd
+	</select>
+	
+	<select id="selectPickedQty" resultType="int">
+		SELECT NVL(SUM(pik_qty),0)
+		FROM picking
+		WHERE inv_no = #{inv_no} AND sts_code = 'PK001'
+	</select>
+	
+	<update id="insertPicking">
+		INSERT INTO picking
+		(pik_no, rls_no, inv_no, pik_qty, sts_code)
+		VALUES (pik_seq.nextval, #{rls_no}, #{inv_no}, #{pik_qty}, 'PK001')
+	</update>
+	
+	<select id="selectItemList" resultType="com.spring.AtoZ.picking.dto.ReleaseItemCommand">
+		SELECT rls_no, item_no, co_code, plan_qty qty, (SELECT wh_code FROM release WHERE rls_no = rls_item.rls_no) wh_code
+		FROM rls_item
+		WHERE rls_no = #{rls_no}
+	</select>
+	
+	<select id="selectPickingList" resultType="com.spring.AtoZ.picking.dto.PickingCommand">
+		SELECT p.inv_no, pik_no, rls_no, pik_qty, qty, (SELECT cm_name FROM cm_code WHERE cm_code = p.sts_code) sts_code,
+			(SELECT SUBSTR(SYS_CONNECT_BY_PATH(wz_loc, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(wz_loc, '-')) ) loc_root
+         			FROM wh_zone
+         			WHERE wz_no = SUBSTR(inv_loc,0,INSTR(inv_loc ,'-')-1)
+         			START WITH up_no IS NULL
+         			CONNECT BY PRIOR wz_no = up_no)||SUBSTR(inv_loc,INSTR(inv_loc,'-'),LENGTH(inv_loc)) inv_name,
+         	i.inv_loc,
+			(SELECT item_name FROM item WHERE item_no = i.item_no AND co_code = i.co_code) item_name,
+			(SELECT std_name FROM standard WHERE std_no = (SELECT std_no FROM item WHERE i.item_no = item_no AND i.co_code = co_code)) std_name,
+			(SELECT cl_name FROM client WHERE cl_code = i.co_code) co_name
+		FROM picking p, inventory i
+		WHERE rls_no = #{rls_no} AND p.inv_no = i.inv_no
+	</select>
+	
+	<select id="selectPickingList2" resultType="com.spring.AtoZ.picking.dto.PickingCommand">
+		SELECT item_no inv_no, rls_no, plan_qty pik_qty, rls_qty qty, (SELECT cm_name FROM cm_code WHERE cm_code = r.sts_code) sts_code,
+			(SELECT item_name FROM item WHERE item_no = r.item_no AND co_code = r.co_code) item_name,
+			(SELECT std_name FROM standard WHERE std_no = (SELECT std_no FROM item WHERE r.item_no = item_no AND r.co_code = co_code)) std_name,
+			(SELECT cl_name FROM client WHERE cl_code = r.co_code) co_name
+		FROM rls_item r
+		WHERE rls_no = #{rls_no}
+	</select>
+	
+	<update id="updateManager" parameterType="hashMap">
+			UPDATE release SET wh_mngr = #{wh_mngr}
+			WHERE rsl_no = #{rls_no}
+	</update>
+	
+	<select id="selectReleaseList" resultType="com.spring.AtoZ.picking.dto.ReleaseListCommand">
+		SELECT rls_no, emp_id wh_mngr,
+				 (SELECT cm_name FROM cm_code WHERE cm_code = r.sts_code) sts_code,
+				 (SELECT emp_name FROM wh_emp WHERE emp_id = r.emp_id) emp_name,
+				 SUBSTR(dst_addr, INSTR( dst_addr , ',')+1, INSTR( dst_addr , ',' , INSTR( dst_addr, ',' ) +1 ) ) dst_addr,
+				 (SELECT cl_name FROM client WHERE cl_code = co_code) co_name
+				 	
+		FROM release r
+		WHERE wh_code = #{wh_code} AND plan_ymd = TO_CHAR(SYSDATE,'yyyymmdd') AND sts_code = 'PR005'
+	</select>
+	<select id="selectReleaseCount" resultType="int">
+		SELECT COUNT(*)
+		FROM release r
+		WHERE wh_code = #{wh_code} AND plan_ymd = TO_CHAR(SYSDATE,'yyyymmdd') AND sts_code = 'PR005'
+	</select>
+	
+	
+	<select id="selectInvLoc" resultType="String">
+		SELECT SUBSTR(inv_loc, 0, INSTR(inv_loc,'-')-1) inv_loc
+		FROM inventory
+		WHERE inv_no = #{inv_no}
+	</select>
+	
+	<select id="selectSameItemByInv" resultType="hashMap">
+		SELECT SUBSTR(inv_loc, 0, INSTR(inv_loc,'-')-1) inv_loc,
+			   inv_no,
+			   (SELECT up_no FROM wh_zone WHERE wz_no = SUBSTR(inv_loc, 0, INSTR(inv_loc,'-')-1)) wz_no
+		FROM inventory
+		WHERE item_no = (SELECT item_no FROM inventory WHERE inv_no = #{inv_no}) AND
+			  co_code = (SELECT co_code FROM inventory WHERE inv_no = #{inv_no}) AND
+			  sts_code = 'IS001'
+	</select>
+	
+	<update id="updatePikInv" parameterType="hashMap">
+		UPDATE picking
+		SET inv_no = #{inv_no}
+		WHERE pik_no = #{pik_no}
+	</update>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+

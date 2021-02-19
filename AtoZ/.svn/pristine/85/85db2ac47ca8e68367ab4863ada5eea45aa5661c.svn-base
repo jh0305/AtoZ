@@ -1,0 +1,370 @@
+package com.spring.AtoZ.item.service;
+
+import java.io.FileInputStream;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.spring.AtoZ.common.dto.PageMaker;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.item.dao.ItemDAO;
+import com.spring.AtoZ.item.dto.CooperatorNameCheckCommand;
+import com.spring.AtoZ.item.dto.ItemCommand;
+import com.spring.AtoZ.item.dto.ItemDetailCommand;
+import com.spring.AtoZ.item.dto.ItemRegistCommand;
+import com.spring.AtoZ.item.dto.StandardCodeCheckCommand;
+import com.spring.AtoZ.item.dto.StandardNameCheckCommand;
+import com.spring.AtoZ.item.dto.UpdateStandardCommand;
+import com.spring.AtoZ.vo.ClientVO;
+import com.spring.AtoZ.vo.CooperatorVO;
+import com.spring.AtoZ.vo.StandardVO;
+
+public class ItemServiceImpl implements ItemService {
+	
+	Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
+	
+	private ItemDAO itemDAO;
+	public void setItemDAO(ItemDAO itemDAO) {
+		this.itemDAO = itemDAO;
+	}
+	@Override
+	public Map<String, Object> getItemList(SearchMap sm) throws SQLException {
+		List<ItemCommand> itemlist = itemDAO.selectSearchItemList(sm);
+		
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(itemDAO.selectItemListCount(sm));
+		
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("itemlist", itemlist);
+		dataMap.put("pageMaker", pageMaker);
+		
+		return dataMap;
+	}
+	@Override
+	public ItemCommand getItemDetail(ItemDetailCommand idc) throws SQLException {
+		ItemCommand item = itemDAO.selectItemDetail(idc);
+		return item;
+	}
+	@Override
+	public String getStdCode(StandardCodeCheckCommand sccc) throws SQLException {
+		String std_code = itemDAO.selectstdcode(sccc);
+		return std_code;
+	}
+	@Override
+	public void registStandard(StandardVO standard) throws SQLException {
+		itemDAO.insertStandard(standard);
+	}
+	@Override
+	public Map<String, Object> getStandardList(SearchMap sm) throws SQLException {
+		List<StandardVO> standardList = itemDAO.selectStandardList(sm);
+		
+		PageMaker pageMaker = new PageMaker();	
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(itemDAO.selectStandardListCount(sm));
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("dataList", standardList);
+		dataMap.put("pageMaker", pageMaker);
+		return dataMap;
+	}
+	@Override
+	public StandardVO getStandard(int std_no) throws SQLException {
+		StandardVO standard = itemDAO.selectStandardByStdNo(std_no);
+		return standard;
+	}
+	@Override
+	public void modifyStandard(UpdateStandardCommand usc) throws SQLException {
+		itemDAO.updateStandard(usc);
+	}
+	@Override
+	public void removeStandard(int std_no) throws SQLException {
+		itemDAO.deleteStandard(std_no);
+	}
+	@Override
+	public Map<String, Object> getCooperatorList(SearchMap sm) throws SQLException {
+		List<CooperatorVO> cooperatorList = itemDAO.selectCooperatorList(sm);
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(sm);
+		pageMaker.setTotalCount(itemDAO.selectCooperatorListCount(sm));
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		dataMap.put("dataList", cooperatorList);
+		dataMap.put("pageMaker", pageMaker);
+		return dataMap;
+	}
+	@Override
+	public void registItem(ItemRegistCommand irc) throws SQLException {
+		itemDAO.insertItem(irc);
+	}
+	@Override
+	public void modifyItem(ItemRegistCommand irc) throws SQLException {
+		itemDAO.updateItem(irc);
+	}
+	@Override
+	public void removeItem(int item_no) throws SQLException {
+		itemDAO.deleteItem(item_no);
+	}
+	@Override
+	public String excelItemRegist(HttpSession session, String fileName) throws Exception {
+		try {
+            FileInputStream file = new FileInputStream("C:/item/excel/upload/"+fileName);
+            XSSFWorkbook workbook = new XSSFWorkbook(file);
+ 
+            int rowindex=0;
+            int columnindex=0;
+            //시트 수 (첫번째에만 존재하므로 0을 준다)
+            //만약 각 시트를 읽기위해서는 FOR문을 한번더 돌려준다
+            XSSFSheet sheet=workbook.getSheetAt(0);
+            //행의 수
+            int rows=sheet.getPhysicalNumberOfRows();
+            StandardNameCheckCommand sncc = new StandardNameCheckCommand();
+            CooperatorNameCheckCommand cncc = new CooperatorNameCheckCommand();
+            String msg = "";
+            for(rowindex=4;rowindex<=rows;rowindex++){
+                //행을읽는다
+                XSSFRow row=sheet.getRow(rowindex);
+                if(row !=null){
+                    //셀의 수
+                    int cells=row.getPhysicalNumberOfCells();
+                    for(columnindex=0; columnindex<=cells; columnindex++){
+                        //셀값을 읽는다
+                        XSSFCell cell=row.getCell(columnindex);
+                        String value="";
+                        //셀이 빈값일경우를 위한 널체크
+                        if(cell==null){
+                            continue;
+                        }else{
+                            //타입별로 내용 읽기
+                            switch (cell.getCellType()){
+                            case XSSFCell.CELL_TYPE_FORMULA:
+                                value=cell.getCellFormula().trim();
+                                break;
+                            case XSSFCell.CELL_TYPE_NUMERIC:
+                            	cell.setCellType( XSSFCell.CELL_TYPE_STRING );
+                            	value = cell.getStringCellValue().trim();
+                            	break;
+                            case XSSFCell.CELL_TYPE_STRING:
+                                value=cell.getStringCellValue().trim()+"";
+                                break;
+                            case XSSFCell.CELL_TYPE_BLANK:
+                                value=cell.getBooleanCellValue()+"";
+                                break;
+                            case XSSFCell.CELL_TYPE_ERROR:
+                                value=cell.getErrorCellValue()+"";
+                                break;
+                            }
+                        }
+                        if(columnindex==1) {
+                        	sncc.setCo_code(((ClientVO)session.getAttribute("loginUser")).getCl_code());
+                        	sncc.setStd_code(value);
+                        	if(itemDAO.selectStandard(sncc)==null) {
+                        		msg += (rowindex+1)+"번 행, "+(columnindex+1)+"번 열 값은 등록되지 않은 규격코드 입니다.\n" ;
+                        	}
+                        }else if(columnindex==5) {
+                        	if(itemDAO.selectCooperator(value)==null) {
+                        		msg += (rowindex+1)+"번 행, "+(columnindex+1)+"번 열 값은 등록되지 않은 거래처명 입니다.\n" ;
+                        	}
+                        }else {
+                        	if(value.equals("")) {
+                        		msg += (rowindex+1)+"번 행, " +(columnindex+1)+"번 열에 공백또는 잘못된 값이 입력되었습니다.\n";
+                        	}
+                        }
+                    }
+                }
+            }
+            
+            if(msg.length()>0) {
+            	return msg;
+            }else{
+            	int item_no = 0;
+            	ItemRegistCommand irc = new ItemRegistCommand();
+            	irc.setCo_code(((ClientVO)session.getAttribute("loginUser")).getCl_code());
+            	for(rowindex=4;rowindex<=rows;rowindex++){
+                    //행을읽는다
+                    XSSFRow row=sheet.getRow(rowindex);
+                    if(row !=null){
+                        //셀의 수
+                        int cells=row.getPhysicalNumberOfCells();
+                        for(columnindex=0; columnindex<=cells; columnindex++){
+                            //셀값을 읽는다
+                            XSSFCell cell=row.getCell(columnindex);
+                            String value="";
+                            //셀이 빈값일경우를 위한 널체크
+                            if(cell==null){
+                                continue;
+                            }else{
+                                //타입별로 내용 읽기
+                                switch (cell.getCellType()){
+                                case XSSFCell.CELL_TYPE_FORMULA:
+                                    value=cell.getCellFormula().trim();
+                                    break;
+                                case XSSFCell.CELL_TYPE_NUMERIC:
+                                	cell.setCellType( XSSFCell.CELL_TYPE_STRING );
+                                	value = cell.getStringCellValue().trim();
+                                	break;
+                                case XSSFCell.CELL_TYPE_STRING:
+                                    value=cell.getStringCellValue().trim()+"";
+                                    break;
+                                case XSSFCell.CELL_TYPE_BLANK:
+                                    value=cell.getBooleanCellValue()+"";
+                                    break;
+                                case XSSFCell.CELL_TYPE_ERROR:
+                                    value=cell.getErrorCellValue()+"";
+                                    break;
+                                }
+                            }
+                            if(columnindex==0) {
+                            	irc.setItem_name(value);
+                            }else if(columnindex==1) {
+                            	irc.setStd_code(value);
+                            }else if(columnindex==2) {
+                            	if(value.equals("원재료")) {
+                            		value="GB001";
+                            	}else if(value.equals("부재료")) {
+                            		value="GB002";
+                            	}else if(value.equals("제품")) {
+                            		value="GB003";
+                            	}else if(value.equals("반제품")) {
+                            		value="GB004";
+                            	}else{
+                            		value="GB005";
+                            	}
+                            	//set
+                            	irc.setGb_code(value);
+                            }else if(columnindex==3) {
+                            	if(value.equals("의류")) {
+                            		value="GR001";
+                            	}else if(value.equals("전자제품")) {
+                            		value="GR002";
+                            	}else if(value.equals("식품")) {
+                            		value="GR003";
+                            	}else if(value.equals("의약품")) {
+                            		value="GR004";
+                            	}else if(value.equals("생활용품")) {
+                            		value="GR005";
+                            	}else if(value.equals("가구")) {
+                            		value="GR006";
+                            	}else if(value.equals("문구류")) {
+                            		value="GR007";
+                            	}else{
+                            		value="GR008";
+                            	}
+                            	//set
+                            	irc.setGr_code(value);
+                            }else if(columnindex==4) {
+                            	if(value.equals("실온")) {
+                            		value="WT001";
+                            	}else if(value.equals("저온")) {
+                            		value="WT002";
+                            	}else if(value.equals("냉장")) {
+                            		value="WT003";
+                            	}else if(value.equals("냉동")) {
+                            		value="WT004";
+                            	}else{
+                            		value="WT005";
+                            	}
+                            	//set
+                            	irc.setType_code(value);
+                            }else if (columnindex==5) {
+								irc.setCp_name(value);
+							}else if(columnindex==6) {
+                            	irc.setItem_wgt(Float.valueOf(value));
+                            }else if(columnindex==7) {
+                            	irc.setReg_name(value);
+                            }
+                            item_no = itemDAO.selectItemSequenceNextValue();
+                            irc.setItem_no(item_no);
+                        }
+                        itemDAO.insertItem2(irc);
+                    }
+                }
+            	return "완료되었습니다.";
+            }
+        }catch(Exception e) {
+            logger.error("{}",e);
+            return "오류입니다.\n관리자에게 연락바랍니다.";
+        }
+	}
+	@Override
+	public String excelStandardRegist(HttpSession session, String fileName) throws Exception {
+		try {
+            FileInputStream file = new FileInputStream("C:/item/excel/upload/"+fileName);
+            XSSFWorkbook workbook = new XSSFWorkbook(file);
+ 
+            int rowindex=0;
+            int columnindex=0;
+            //시트 수 (첫번째에만 존재하므로 0을 준다)
+            //만약 각 시트를 읽기위해서는 FOR문을 한번더 돌려준다
+            XSSFSheet sheet=workbook.getSheetAt(0);
+            //행의 수
+            int rows=sheet.getPhysicalNumberOfRows();
+            String msg = "";
+            StandardVO std = new StandardVO();
+            for(rowindex=4;rowindex<=rows;rowindex++){
+                //행을읽는다
+                XSSFRow row=sheet.getRow(rowindex);
+                if(row !=null){
+                    //셀의 수
+                    int cells=row.getPhysicalNumberOfCells();
+                    for(columnindex=0; columnindex<=cells; columnindex++){
+                        //셀값을 읽는다
+                        XSSFCell cell=row.getCell(columnindex);
+                        String value="";
+                        //셀이 빈값일경우를 위한 널체크
+                        if(cell==null){
+                            continue;
+                        }else{
+                            //타입별로 내용 읽기
+                            switch (cell.getCellType()){
+                            case XSSFCell.CELL_TYPE_FORMULA:
+                                value=cell.getCellFormula().trim();
+                                break;
+                            case XSSFCell.CELL_TYPE_NUMERIC:
+                            	cell.setCellType( XSSFCell.CELL_TYPE_STRING );
+                            	value = cell.getStringCellValue().trim();
+                            	break;
+                            case XSSFCell.CELL_TYPE_STRING:
+                                value=cell.getStringCellValue().trim()+"";
+                                break;
+                            case XSSFCell.CELL_TYPE_BLANK:
+                                value=cell.getBooleanCellValue()+"";
+                                break;
+                            case XSSFCell.CELL_TYPE_ERROR:
+                                value=cell.getErrorCellValue()+"";
+                                break;
+                            }
+                        }
+                        if(columnindex==0) {
+                        	std.setStd_code(value);
+                        }else if(columnindex==1) {
+                        	std.setStd_name(value);
+                        }else if(columnindex==2) {
+                        	std.setStd_width(Integer.valueOf(value));
+                        }else if(columnindex==3) {
+                        	std.setStd_lngth(Integer.valueOf(value));
+                        }else if(columnindex==4) {
+                        	std.setStd_height(Integer.valueOf(value));
+                        }
+                        std.setStd_no(itemDAO.selectStandardSequenceNextValue());
+                        std.setCo_code(((ClientVO)session.getAttribute("loginUser")).getCl_code());
+                    }
+                    itemDAO.insertStandard(std);
+                }
+            }
+            return "완료되었습니다.";
+        }catch(Exception e) {
+            logger.error("{}",e);
+            return "오류입니다.\n관리자에게 연락바랍니다.";
+        }
+	}
+	
+}

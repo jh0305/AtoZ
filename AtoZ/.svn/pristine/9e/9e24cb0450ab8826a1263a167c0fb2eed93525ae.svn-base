@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Construct-Mapper">
+	<select id="selectConstruct" parameterType="com.spring.AtoZ.vo.ZoneVO" resultType="com.spring.AtoZ.vo.ZoneVO">
+		SELECT WZ_NO, WZ_LOC, WH_CODE, CM_CODE, WZ_DSC, WZ_ORDER, WZ_LNGTH, WZ_WIDTH, WZ_AREA, 
+				CO_CODE, WZ_XPOINT, WZ_YPOINT, DONG_NAME, FLOOR_NAME, TRG_CODE, RK_NO, UP_NO, LEVEL,
+				(SELECT WZ_LOC FROM WH_ZONE WHERE WZ_NO = W.UP_NO) UP_LOC
+		FROM WH_ZONE W START WITH UP_NO IS NULL AND WH_CODE = #{wh_code} AND DONG_NAME = #{dong_name} AND FLOOR_NAME = #{floor_name} CONNECT BY PRIOR WZ_NO = UP_NO
+	</select>
+	<select id="selectDongFloor" parameterType="str" resultType="com.spring.AtoZ.vo.DongFloorVO">
+		SELECT DONG_NAME, FLOOR_NAME, DF_WIDTH, DF_LNGTH, DF_AREA 
+		FROM DONG_FLOOR 
+		WHERE WH_CODE = #{whCode}
+		ORDER BY DONG_NAME
+	</select>
+	<select id="selectHandlingType" resultType="map">
+		SELECT CT.TYPE_CODE, CM_CODE, CM_NAME
+		FROM CM_CODE CC JOIN CM_TYPE CT ON CC.TYPE_CODE = CT.TYPE_CODE
+		WHERE CT.TYPE_CODE = 'TC019' AND CC.ACT_YN = 1 AND CT.ACT_YN = 1 
+		ORDER BY CM_CODE
+	</select>
+	<select id="selectStrategy" resultType="map">
+		SELECT CT.TYPE_CODE, CM_CODE, CM_NAME
+		FROM CM_CODE CC JOIN CM_TYPE CT ON CC.TYPE_CODE = CT.TYPE_CODE
+		WHERE CT.TYPE_CODE = 'TC017' AND CC.ACT_YN = 1 AND CT.ACT_YN = 1 
+		ORDER BY CM_CODE
+	</select>
+	<select id="selectProductGroup" resultType="map">
+		SELECT CM_CODE, CM_NAME
+		FROM CM_CODE
+		WHERE TYPE_CODE = 'TC002' AND ACT_YN = 1
+	</select>
+	<select id="selectProduct" resultType="map">
+		SELECT ITEM_NO, ITEM_NAME, C.CM_NAME, S.STD_NAME
+		FROM ITEM I 
+		JOIN STANDARD S ON I.STD_NO = S.STD_NO 
+		JOIN CM_CODE C ON I.GR_CODE = C.CM_CODE
+		WHERE I.STS_CODE = 'US001'
+	</select>
+	<select id="selectRackList" parameterType="str" resultType="com.spring.AtoZ.vo.RackVO">
+		SELECT RK_NO, RK_FLR, BLK_COL, BLK_WIDTH, BLK_LNGTH, BLK_HEIGHT  
+		FROM RACK 
+		WHERE WH_CODE = #{whCode}
+	</select>
+	<update id="insertZone" parameterType="com.spring.AtoZ.vo.ZoneVO">
+		INSERT INTO 
+		WH_ZONE(WZ_NO, WZ_LOC, WH_CODE, CM_CODE, WZ_LNGTH, WZ_WIDTH, WZ_AREA, WZ_XPOINT, WZ_YPOINT, DONG_NAME, FLOOR_NAME) 
+		VALUES(ZONE_SEQ.NEXTVAL, #{wz_loc}, #{wh_code}, #{cm_code}, #{wz_lngth}, #{wz_width}, #{wz_area}, #{wz_xpoint}, #{wz_ypoint}, #{dong_name}, #{floor_name})
+	</update>
+	<update id="insertRackInZone" parameterType="com.spring.AtoZ.vo.ZoneVO">
+		INSERT INTO 
+		WH_ZONE(WZ_NO, WZ_LOC, WH_CODE, WZ_LNGTH, WZ_WIDTH, WZ_AREA, WZ_XPOINT, WZ_YPOINT, DONG_NAME, FLOOR_NAME, RK_NO, TRG_CODE) 
+		VALUES(ZONE_SEQ.NEXTVAL, #{wz_loc}, #{wh_code}, #{wz_lngth}, #{wz_width}, #{wz_area}, #{wz_xpoint}, #{wz_ypoint}, #{dong_name}, #{floor_name}, #{rk_no}, #{trg_code})
+	</update>
+	<update id="insertRackInZone2" parameterType="com.spring.AtoZ.vo.ZoneVO">
+		INSERT INTO 
+		WH_ZONE(WZ_NO, WZ_LOC, WH_CODE, WZ_LNGTH, WZ_WIDTH, WZ_AREA, WZ_XPOINT, WZ_YPOINT, DONG_NAME, FLOOR_NAME, RK_NO) 
+		VALUES(ZONE_SEQ.NEXTVAL, #{wz_loc}, #{wh_code}, #{wz_lngth}, #{wz_width}, #{wz_area}, #{wz_xpoint}, #{wz_ypoint}, #{dong_name}, #{floor_name}, #{rk_no}, #{trg_code})
+	</update>
+	<update id="updateUpNoFromZone" parameterType="com.spring.AtoZ.vo.ZoneVO">
+		<selectKey resultType="int" keyProperty="wz_no" order="BEFORE">
+	        SELECT WZ_NO FROM WH_ZONE WHERE WZ_LOC = #{up_loc} AND WH_CODE = #{wh_code}
+	    </selectKey>
+		UPDATE WH_ZONE SET UP_NO = #{wz_no} 
+		WHERE WZ_LOC = #{wz_loc} AND WH_CODE = #{wh_code} AND DONG_NAME = #{dong_name} AND FLOOR_NAME = #{floor_name}
+	</update>
+	<update id="updateCoordinateFromZone" parameterType="com.spring.AtoZ.vo.ZoneVO">
+		UPDATE WH_ZONE SET WZ_XPOINT = #{wz_xpoint}, WZ_YPOINT = #{wz_ypoint} 
+		WHERE WH_CODE = #{wh_code} AND WZ_LOC = #{wz_loc} AND DONG_NAME = #{dong_name} AND FLOOR_NAME = #{floor_name}
+	</update>
+	<update id="deleteZone" parameterType="com.spring.AtoZ.vo.ZoneVO">
+		DELETE FROM WH_ZONE 
+		WHERE WZ_NO = #{wz_no} AND WH_CODE = #{wh_code} AND DONG_NAME = #{dong_name} AND FLOOR_NAME = #{floor_name}
+	</update>
+	<select id="getRackSeq" resultType="int">
+		SELECT RACK_SEQ.NEXTVAL FROM DUAL
+	</select>
+	<update id="insertRack" parameterType="com.spring.AtoZ.vo.RackVO">
+		INSERT INTO
+		RACK(RK_NO, RK_FLR, BLK_COL, BLK_WIDTH, BLK_LNGTH, BLK_HEIGHT, WH_CODE)
+		VALUES(#{rk_no}, #{rk_flr}, #{blk_col}, #{blk_width}, #{blk_lngth}, #{blk_height}, #{wh_code})
+	</update>
+	<update id="insertRackStd" parameterType="com.spring.AtoZ.vo.RackStandardVO">
+		INSERT INTO RACK_STD(RS_NO, RK_NO, RS_FLR) 
+		VALUES(RACK_STD_SEQ.NEXTVAL, #{rk_no}, #{rs_flr})
+	</update>
+	<update id="updateRack" parameterType="com.spring.AtoZ.vo.RackVO">
+		UPDATE RACK 
+		SET RK_FLR = #{rk_flr}, BLK_COL = #{blk_col}, BLK_WIDTH = #{blk_width}, BLK_LNGTH = #{blk_lngth}, BLK_HEIGHT = #{blk_height}
+		WHERE RK_NO = #{rk_no} AND WH_CODE = #{wh_code} 
+	</update>
+	<update id="deleteRack" parameterType="com.spring.AtoZ.vo.RackVO">
+		DELETE FROM RACK
+		WHERE RK_NO = #{rk_no} AND WH_CODE = #{wh_code}
+	</update>
+	<select id="selectRackStd" parameterType="int" resultType="com.spring.AtoZ.vo.RackStandardVO">
+		SELECT RS_NO, RK_NO, RS_FLR, MIN_WGT, MAX_WGT 
+		FROM RACK_STD 
+		WHERE RK_NO = #{rk_no}
+	</select>
+	<update id="updateRackStd" parameterType="com.spring.AtoZ.vo.RackStandardVO">
+		UPDATE RACK_STD 
+		SET MIN_WGT = #{min_wgt}, MAX_WGT = #{max_wgt} 
+		WHERE RS_NO = #{rs_no}
+	</update>
+	<select id="selectZoneInfo" parameterType="int" resultType="map">
+		SELECT WZ_NO, WH_CODE, C.CM_NAME, WZ_LNGTH, WZ_WIDTH, WZ_AREA, CL.CL_NAME
+		FROM WH_ZONE W 
+		JOIN CM_CODE C ON(W.CM_CODE = C.CM_CODE) 
+		LEFT OUTER JOIN CLIENT CL ON(W.CO_CODE = CL.CL_CODE)
+		WHERE WZ_NO = #{wz_no}
+	</select>
+	<select id="selectRackInfo" parameterType="int" resultType="map">
+		SELECT WZ_NO, WZ_LOC, WZ.WH_CODE,
+		(SELECT cl_name FROM client WHERE cl_code = (SELECT co_code FROM wh_zone WHERE wz_no = wz.up_no)) cl_name,
+		BLK_WIDTH * BLK_LNGTH * RK_FLR * BLK_COL WZ_AREA, R.RK_FLR, R.BLK_COL, R.BLK_WIDTH, R.BLK_LNGTH,
+        (SELECT CM_NAME FROM CM_CODE WHERE CM_CODE = (SELECT CM_CODE FROM WH_ZONE WHERE WZ_NO = WZ.UP_NO)) CM_NAME,
+        (SELECT CM_NAME FROM CM_CODE WHERE CM_CODE = SUBSTR(TRG_CODE, 2)) TRG_NAME
+		FROM WH_ZONE WZ
+		JOIN RACK R ON(WZ.RK_NO = R.RK_NO)
+		LEFT OUTER JOIN CM_CODE CC ON(WZ.CM_CODE = CC.CM_CODE)
+		WHERE WZ_NO = #{wz_no}
+	</select>
+	<select id="selectRackFloorCount" parameterType="int" resultType="int">
+		SELECT RK_FLR 
+		FROM RACK
+		WHERE RK_NO = (SELECT RK_NO FROM WH_ZONE WHERE WZ_NO = #{wz_no})
+	</select>
+	<select id="selectItemInRack" parameterType="str" resultType="map">
+		SELECT INV_NO, IT.ITEM_NAME || ' ' || S.STD_NAME ITEM, SUBSTR(INV_lOC,0,INSTR(INV_LOC, '-') - 1) RACK_NO, 
+				SUBSTR(INV_LOC,INSTR(INV_LOC, '-')+1,1) FLOOR, SUBSTR(INV_LOC,INSTR(INV_LOC, '-')+2,1) BLOCK, INV_QTY,
+				INV_QTY, inv_qty - (SELECT NVL(SUM(pik_qty),0) FROM picking WHERE inv_no = i.inv_no AND sts_code IN ('PK001','PK002')) canpik
+		FROM INVENTORY I
+		JOIN ITEM IT ON(I.ITEM_NO = IT.ITEM_NO)
+		JOIN STANDARD S ON(IT.STD_NO = S.STD_NO)
+		WHERE INV_LOC LIKE #{wz_no} || '%' AND I.STS_CODE = 'IS001' AND I.inv_qty > 0
+		ORDER BY BLOCK, INV_NO
+	</select>
+	<select id="selectItemInRack2" parameterType="str" resultType="map">
+		SELECT INV_NO, IT.ITEM_NAME || ' ' || S.STD_NAME ITEM, SUBSTR(INV_lOC,0,INSTR(INV_LOC, '-') - 1) RACK_NO, 
+				SUBSTR(INV_LOC,INSTR(INV_LOC, '-')+1,1) FLOOR, SUBSTR(INV_LOC,INSTR(INV_LOC, '-')+2,1) BLOCK, INV_QTY, I.sts_code
+		FROM INVENTORY I
+		JOIN ITEM IT ON(I.ITEM_NO = IT.ITEM_NO)
+		JOIN STANDARD S ON(IT.STD_NO = S.STD_NO)
+		WHERE INV_LOC LIKE #{wz_no} || '%' AND I.STS_CODE IN ('IS001', 'IS002') AND I.inv_qty > 0
+		ORDER BY BLOCK
+	</select>
+	
+	
+</mapper>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Charge-Mapper">
+	
+	<!-- C -->
+	<!-- 청구등록 -->
+	<insert id="insertCharge" parameterType="payment">
+		INSERT INTO payment (
+		    pay_no,
+		    pay_chg,
+		    content,
+		    pay_ymd,
+		    sts_code
+		) VALUES (
+		    #{pay_no},
+		    #{pay_chg},
+		    #{content},
+		    TO_CHAR(SYSDATE, 'yyyymmdd'),
+		    'PY000'
+		)
+	</insert>
+	<!-- R -->
+	<!-- payment 현제 시퀀스 값 -->
+	<select id="selectPaymentSequenceNextValue" resultType="int">
+		select payment_seq.nextVal
+		from dual
+	</select>
+	
+	<!-- 청구필요목록 -->
+	<select id="selectChargeRequestList" parameterType="hashMap" resultType="chargeCommand">
+		SELECT
+		    co_code, ord_no, in_ymd, in_chrg,
+		    (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name,
+		    (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item WHERE ord_no = in_order.ord_no) AND co_code = in_order.co_code) item_name,
+		    (SELECT COUNT(*) FROM order_item WHERE in_order.ord_no = ord_no) item_qty,
+		    (SELECT SUM(in_qty) FROM order_item WHERE in_order.ord_no = ord_no) in_qty
+		FROM
+		    in_order
+		WHERE 
+		      sts_code = 'PR004'
+		      and pay_no is null
+		      and wh_code = #{wh_code}
+		ORDER BY ord_no DESC
+	</select>
+	<!-- 청구필요목록 리스트갯수 -->
+	<select id="selectSearchChargeRequestListRowCnt" parameterType="hashMap" resultType="int">
+		SELECT
+		    COUNT(*)
+		FROM
+			in_order
+		WHERE 
+		      sts_code = 'PR004'
+		      and pay_no is null
+		      and wh_code = #{wh_code}
+	</select>
+	
+	<!-- 청구현황목록 -->
+	<select id="selectChargeResultList" parameterType="hashMap" resultType="payment">
+		SELECT
+		    a.*,
+		    c.cl_name co_name
+		FROM
+		    (SELECT
+		        i.co_code co_code,
+		        p.pay_no,
+		        p.pay_ymd,
+		        p.content,
+		        p.pay_chg,
+		        p.sts_code
+		    FROM
+		        payment p, in_order i
+		    WHERE
+		        p.pay_no = i.pay_no
+		        and p.sts_code = 'PY000' or p.sts_code = 'PY001' or p.sts_code = 'PY002'
+		        and i.wh_code = #{wh_code}
+		    ORDER BY pay_no DESC) a, client c
+		WHERE
+		    a.co_code = c.cl_code
+	</select>
+	<!-- 청구현황목록 리스트갯수 -->
+	<select id="selectSearchChargeResultListRowCnt" parameterType="hashMap" resultType="int">
+		SELECT
+		    COUNT(*)
+		FROM
+		    (SELECT
+		        i.co_code co_code,
+		        p.pay_no,
+		        p.pay_ymd,
+		        p.content,
+		        p.pay_chg,
+		        p.sts_code
+		    FROM
+		        payment p, in_order i
+		    WHERE
+		        p.pay_no = i.pay_no
+		        and p.sts_code = 'PY000' or p.sts_code = 'PY001' or p.sts_code = 'PY002'
+		        and i.wh_code = 'WH1'
+		    ORDER BY pay_no DESC) a, client c
+		WHERE
+		    a.co_code = c.cl_code
+	</select>
+	
+	<!-- 계약기업검색 -->
+	<select id="selectContractCO" parameterType="hashMap" resultType="client">
+		SELECT
+		    cl_code, cl_name
+		FROM
+		    client
+		WHERE
+		    cl_code IN (SELECT co_code FROM c2c_contract WHERE sts_code = 'CR002' and wh_code = #{wh_code})
+		    and (cl_code LIKE '%'||#{searchData}||'%' or cl_name LIKE '%'||#{searchData}||'%')
+	</select>
+	
+	<!-- 청구 확인창 form data -->
+	<select id="selectChargeConfirmFormData" parameterType="hashMap" resultType="confirm">
+		SELECT
+			(SELECT cl_name FROM client WHERE cl_code = #{co_code}) co_name,
+		    (SELECT COUNT(ord_no) FROM in_order WHERE sts_code = 'PR004' and pay_no is null and wh_code = #{wh_code} and co_code = #{co_code}) receive_count,
+		    (SELECT COUNT(oi_no) FROM order_item WHERE ord_no IN (SELECT ord_no FROM in_order WHERE sts_code = 'PR004' and pay_no is null and wh_code = #{wh_code} and co_code = #{co_code})) receive_item_total_count,
+		    (SELECT SUM(in_qty) FROM order_item WHERE ord_no IN (SELECT ord_no FROM in_order WHERE sts_code = 'PR004' and pay_no is null and wh_code = #{wh_code} and co_code = #{co_code})) receive_item_total_in_qty,
+		    (SELECT mnth_chrg FROM c2c_contract WHERE wh_code = #{wh_code} and co_code = #{co_code}) mnth_chrg,
+		    (SELECT SUM(in_chrg) FROM in_order WHERE sts_code = 'PR004' and pay_no is null and wh_code = #{wh_code} and co_code = #{co_code}) total_in_chrg
+		FROM
+		    dual
+	</select>
+	
+	<!-- 청구완료 디테일 -->
+	<select id="selectChargeDetailFormData" parameterType="hashMap" resultType="chargeCommand">
+		SELECT
+		    a.*, c.mnth_chrg
+		FROM
+		    (SELECT
+		        co_code, wh_code, ord_no, in_ymd, in_chrg,
+		        (SELECT cl_name FROM client WHERE cl_code = in_order.co_code) co_name,
+		        (SELECT item_name FROM item WHERE item_no = (SELECT MAX(item_no) FROM order_item WHERE ord_no = in_order.ord_no) AND co_code = in_order.co_code) item_name,
+		        (SELECT COUNT(*) FROM order_item WHERE in_order.ord_no = ord_no) item_qty,
+		        (SELECT SUM(in_qty) FROM order_item WHERE in_order.ord_no = ord_no) in_qty
+		    FROM
+		        in_order
+		    WHERE 
+		          sts_code = 'PR004'
+		          and pay_no = #{pay_no}
+		          and wh_code = #{wh_code}
+		    ORDER BY ord_no DESC) a, c2c_contract c
+		WHERE
+	        c.co_code = a.co_code
+  			and c.wh_code = a.wh_code
+	</select>
+	
+	<!-- U -->
+	<!-- 발주 정보 결제번호 업데이트 -->
+	<update id="updateOrderTablePay_no" parameterType="hashMap">
+		UPDATE in_order
+		SET
+		    pay_no = #{pay_no}
+		WHERE
+		    ord_no = #{ord_no}
+	</update>
+	
+	<!-- D -->
+	
+	
+	
+</mapper>

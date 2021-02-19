@@ -1,0 +1,143 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ page trimDirectiveWhitespaces="true" %>  
+<script>
+
+var checkedID="";
+
+function idCheck_go(target){
+	//alert("check di click");
+	var input_ID=$('input[name="id"]');
+	
+	if(input_ID.val()==""){
+		alert("아이디를 입력하세요.");
+		input_ID.focus();
+		return;
+	}else{
+		//아이디는 4~16자의 영문자와 숫자로만 입력
+		var reqID=/^[a-zA-Z0-9]{4,16}$/
+		if(!reqID.test($('input[name="id"]').val())){
+			alert("4~16자의 영문자와 숫자로만 입력해야 합니다.");
+			$('input[name="id"]').focus();
+			return;
+		}
+	}
+	
+	var data = {id : input_ID.val().trim()};
+	
+	$.ajax({
+		url:"<%=request.getContextPath()%>/serviceUse/idCheck.do",
+		data:data,
+		type:'post',
+		success:function(result){
+			console.log(result);
+			if(result){
+				alert("사용가능한 아이디입니다.");
+				checkedID=result;
+				$('input[name="cl_id"]').val(result);
+			}else{
+				alert("중복된 아이디 입니다.");
+				$('input[name="cl_id"]').focus();
+				
+			}
+		},
+		error:function(error){
+			if(error.status=="302"){
+				alert("세션이 만료되었습니다.\n 로그인하세요.");
+				window.close();
+				window.opener.parent.loaction.reload();
+				return;
+			}
+			alert("시스템 장애로 가입이 불가합니다.");
+		}
+	})
+}
+window.onload=function(){
+	
+	//아이디 유효성 검사
+	$("#cl_id").on("input", function(){
+		  var id = $("#cl_id").val();
+	    if(id == ""){
+	    	alert("아이디를 입력해주세요");
+	    	return;
+	    }
+	});
+	
+	//비밀번호 유효성검사
+	$("#cl_pwd").on("input",function(){
+	    var regex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,16}$/;
+	    var result = regex.exec($("#cl_pwd").val())
+	    
+	    if(result != null){
+	        $(".cl_pwd.regex").html("");
+	    }else{
+	        $(".cl_pwd.regex").html("영어대소문자,숫자 ,특수문자 8-16자리");
+	        $(".cl_pwd.regex").css("color","red")
+	    }
+	});
+	  
+	//비밀번호 확인    
+	$("#cl_pwd2").on("keyup",function(){
+	     if($("#cl_pwd").val()==$("#cl_pwd2").val()){
+	        $(".cl_pwd2.regex").html("비밀번호가 일치합니다"); 
+	     }else{
+	      $(".cl_pwd2.regex").html("비밀번호가 일치하지않습니다"); 
+	      $(".cl_pwd2.regex").css("color","red")
+	     }
+	});
+}
+
+function submit_go(target){
+// 	var uploadCheck = $('input[name="checkUpload"]').val();
+// 	if(!(uploadCheck>0)){
+// 		alert("사진 업로드는 필수입니다.");
+// 		//$('input[name="pictureFile"]').click();
+// 		return;
+// 	}
+	
+	if($('input[name="id"]').val()==""){
+		alert("아이디는 필수입니다.");
+		return;
+	}
+	
+	if($('input[name="id"]').val()!==checkedID){
+		alert("아이디는 중복확인이 필요합니다.");
+		return;
+	}
+	
+	if($('input[name="pwd"]').val()==""){
+		alert("패스워드는 필수입니다.");
+		return;
+	}
+	
+	if($('input[name="cl_name"]').val()==""){
+		alert("이름은 필수입니다.");
+		return;
+	}
+	
+	if($('input[name="cl_ceo"]').val()==""){
+		alert("대표자명은 필수입니다.");
+		return;
+	}
+	if($('input[name="cl_email"]').val()==""){
+		alert("이메일은 필수입니다.");
+		return;
+	}
+	if($('input[name="cl_regno"]').val()==""){
+		alert("대표자명은 필수입니다.");
+		return;
+	}
+	if($('input[name="cl_addr"]').val()==""){
+		alert("주소는 필수입니다.");
+		return;
+	}
+	if($('input[name="cl_tel"]').val()==""){
+		alert("전화번호는 필수입니다.");
+		return;
+	}
+	var form=$('form[role="form"]');
+	form.submit();
+	alert("이용신청이 완료되었습니다.");
+	
+}
+</script>

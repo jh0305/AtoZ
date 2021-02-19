@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Order-Mapper">
+
+	<!-- 발주 -->
+	<update id="insertOrder" parameterType="order">
+		INSERT INTO in_order (
+		    ord_no,
+		    co_code,
+		    wh_code,
+		    req_ymd,
+		    deli_ymd,
+		    ord_mngr,
+		    sts_code
+		) VALUES (
+		    #{ord_no},
+		    #{co_code},
+		    #{wh_code},
+		    #{req_ymd},
+		    #{deli_ymd},
+		    #{ord_mngr},
+		    #{sts_code}
+		)
+	</update>
+
+	<select id="selectOrderList" resultType="order">
+	    SELECT
+		    i.ord_no,
+		    i.co_code,
+		    i.wh_code,
+		    c.cl_name wh_name,
+		    i.pay_no,
+		    i.req_ymd,
+		    i.deli_ymd,
+		    i.ord_dsc,
+		    i.ord_mngr,
+		    i.wh_mngr,
+		    i.in_ymd,
+		    i.sts_code,
+		    i.in_chrg    
+		FROM
+		    in_order i, client c
+		WHERE
+		    co_code = #{co_code}
+		    and c.cl_code = i.wh_code
+		ORDER BY ord_no DESC, req_ymd DESC
+	</select>
+	
+	<select id="selectOrderListWhere" parameterType="order" resultType="order">
+		SELECT
+		    i.ord_no,
+		    i.co_code,
+		    i.wh_code,
+		    c.cl_name wh_name,
+		    i.pay_no,
+		    i.req_ymd,
+		    i.deli_ymd,
+		    i.ord_dsc,
+		    i.ord_mngr,
+		    i.wh_mngr,
+		    i.in_ymd,
+		    i.sts_code,
+		    i.in_chrg,
+		    i.upd_name,
+		    i.upd_ymd
+		FROM
+		    in_order i, client c
+		WHERE
+			i.co_code = #{co_code}
+			and c.cl_code = i.wh_code
+			<if test='req_ymd_after == " " and req_ymd != " "'>
+				and i.req_ymd like '%'||#{req_ymd}||'%' 
+			</if>
+			<if test='req_ymd_after != " " and req_ymd != " "'>
+				and i.req_ymd between #{req_ymd} and #{req_ymd_after}
+			</if>
+			<if test='deli_ymd_after == " " and deli_ymd != " "'>
+				and i.deli_ymd like '%'||#{deli_ymd}||'%' 
+			</if>
+			<if test='deli_ymd_after != " " and deli_ymd != " "'>
+				and i.deli_ymd between #{deli_ymd} and #{deli_ymd_after}
+			</if>
+			
+			<if test='wh_code != ""'>
+				and i.wh_code like '%'||#{wh_code}||'%' 
+			</if>
+			<if test='ord_mngr != ""'>
+				and i.ord_mngr like '%'||#{ord_mngr}||'%' 
+			</if>
+		ORDER BY i.ord_no DESC, i.req_ymd DESC
+	</select>
+	
+	<select id="selectOrderDetail" parameterType="str" resultType="order">
+		SELECT
+		    i.ord_no,
+		    i.co_code,
+		    i.wh_code,
+		    c.cl_name wh_name,
+		    i.pay_no,
+		    i.req_ymd,
+		    i.deli_ymd,
+		    i.ord_dsc,
+		    i.ord_mngr,
+		    i.wh_mngr,
+		    in_ymd,
+		    i.sts_code,
+		    i.in_chrg,
+		    i.upd_name,
+		    i.upd_ymd
+		FROM
+		    in_order i, client c
+		WHERE
+		    i.ord_no = #{ord_no}
+		    and c.cl_code = i.wh_code
+	</select>
+
+	<update id="updateOrderDetail" parameterType="com.spring.AtoZ.vo.OrderVO">
+		UPDATE in_order
+		SET
+		    req_ymd   = #{req_ymd},
+		    deli_ymd  = #{deli_ymd},
+		    ord_dsc   = #{ord_dsc},
+		    ord_mngr  = #{ord_mngr},
+		    upd_name  = #{upd_name},
+		    upd_ymd   = #{upd_ymd}
+		WHERE
+		    ord_no = #{ord_no}
+	</update>
+		
+	<update id="deleteOrder" parameterType="str">
+		DELETE FROM in_order
+		WHERE
+		    ord_no = #{ord_no}
+	</update>	
+	
+	<!-- 발주 팝업 -->
+	<select id="selectContractWH" parameterType="hashMap" resultType="com.spring.AtoZ.vo.ClientVO">
+		SELECT cl_code, cl_name
+		FROM
+		    (SELECT cl_code, cl_name
+		     FROM client
+		     WHERE sts_code = 'CR002' and cl_code IN (SELECT wh_code
+		                                              FROM c2c_contract
+		                                              WHERE co_code = #{coCode} and sts_code = 'CR002'))
+		WHERE cl_code LIKE '%'||#{searchData}||'%' or cl_name LIKE '%'||#{searchData}||'%'
+	</select>	
+	
+	<!-- 발주품목 -->
+	<update id="insertOrderItem" parameterType="orderItem">
+		INSERT INTO order_item (
+		    oi_no,
+		    ord_no,
+		    item_no,
+		    qty,
+		    sts_code,
+		    co_code
+		) VALUES(order_item_seq.nextval,
+			     #{ord_no},
+			     #{item_no},
+			     #{qty},
+			     #{sts_code},
+			     #{co_code})
+	</update>
+	
+	<select id="selectOrderItemList" parameterType="str" resultType="com.spring.AtoZ.vo.OrderItemVO">
+		SELECT
+		    oi_no,
+		    ord_no,
+		    item_no,
+		    qty,
+		    sts_code,
+		    co_code
+		FROM
+		    order_item
+		WHERE
+		    ord_no = #{ord_no}
+	</select>
+	
+	<update id="updateOrderItem" parameterType="com.spring.AtoZ.vo.OrderItemVO">
+		UPDATE order_item
+		SET
+		    item_no = #{item_no},
+		    qty = #{qty}
+		WHERE
+		    oi_no = #{oi_no}
+	</update>
+	
+	<update id="deleteOrderItem" parameterType="str">
+		DELETE FROM order_item
+		WHERE
+		    oi_no = #{oi_no}
+	</update>
+	
+	<!-- 품목검색팝업 -->
+	<select id="selectItemList" parameterType="hashMap" resultType="com.spring.AtoZ.order.dto.SearchCommand">
+		SELECT
+		    i.item_no,
+		    i.item_name,
+		    c.cp_code,
+		    c.cp_name,
+		    s.std_name
+		FROM
+		    item i, standard s, cooperator c
+		WHERE 
+		    i.std_no = s.std_no
+		and i.cp_no = c.cp_no
+		and i.co_code = #{loginUserCoCode}
+		and i.sts_code != 'US002' 
+		and (i.item_no   LIKE '%'||#{inputValue}||'%' 
+		 or i.item_name LIKE '%'||#{inputValue}||'%' 
+		 or c.cp_code   LIKE '%'||#{inputValue}||'%' 
+		 or c.cp_name   LIKE '%'||#{inputValue}||'%')
+	</select>
+	
+	<!-- 시퀀스값 -->
+	<select id="selectOrderSequenceNextValue" resultType="int">
+		select in_order_seq.nextval
+		from dual
+	</select>
+	
+	<select id="selectOrderSequenceCurrValue" resultType="int">
+		select in_order_seq.currval
+		from dual
+	</select>
+	
+	<select id="selectOrderItemDetail" parameterType="hashMap" resultType="orderDetail">
+		SELECT
+		    i.ord_no,
+		    o.item_no,
+		    o.qty,
+		    item.item_name,
+		    c.cp_code,
+		    c.cp_name,
+		    s.std_name
+		FROM
+		    in_order i, order_item o, item, cooperator c, standard s
+		WHERE
+		    i.ord_no = o.ord_no
+		    and item.item_no = o.item_no
+		    and item.co_code = o.co_code
+		    and item.std_no = s.std_no
+		    and item.cp_no = c.cp_no
+		    and i.ord_no = #{ord_no}
+		    and i.co_code = #{co_code}
+	</select>
+
+</mapper>

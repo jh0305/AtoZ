@@ -1,0 +1,216 @@
+package com.spring.AtoZ.construct.service;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.spring.AtoZ.construct.dao.ConstructDAO;
+import com.spring.AtoZ.strategy.dao.StrategyDAO;
+import com.spring.AtoZ.strategy.dto.StrategyItemCommand;
+import com.spring.AtoZ.strategy.dto.StrategyRackCommand;
+import com.spring.AtoZ.vo.DongFloorVO;
+import com.spring.AtoZ.vo.RackStandardVO;
+import com.spring.AtoZ.vo.RackVO;
+import com.spring.AtoZ.vo.ZoneVO;
+
+public class ConstructServiceImpl implements ConstructService {
+	private ConstructDAO constructDAO;
+	public void setConstructDAO(ConstructDAO constructDAO) {
+		this.constructDAO = constructDAO;
+	}
+	private StrategyDAO strategyDAO;
+	public void setStrategyDAO(StrategyDAO strategyDAO) {
+		this.strategyDAO = strategyDAO;
+	}
+	@Override
+	public List<ZoneVO> getConstruct(ZoneVO zone) throws SQLException {
+		List<ZoneVO> zoneList = null;
+		zoneList = constructDAO.selectConstruct(zone);
+		return zoneList;
+	}
+	@Override
+	public Map<String, Object> getConstructAttr(String whCode) throws SQLException {
+		Map<String, Object> dataMap = new HashMap<>();
+		
+		List<Map<String, Object>> handlingType = null;
+		List<Map<String, Object>> strategy = null;
+		List<DongFloorVO> dongFloorList = null;
+		
+		handlingType = constructDAO.selectHandlingType();
+		strategy = constructDAO.selectStrategy();
+		dongFloorList = constructDAO.selectDongFloor(whCode);
+		
+		dataMap.put("handlingType", handlingType);
+		dataMap.put("strategy", strategy);
+		dataMap.put("dongFloorList", dongFloorList);
+		
+		return dataMap;
+	}
+	
+	@Override
+	public List<RackVO> getRackList(String whCode) throws SQLException {
+		List<RackVO> rackList = null;
+		rackList = constructDAO.selectRackList(whCode);
+		return rackList;
+	}
+	
+	@Override
+	public List<Map<String, Object>> getStrategy(String whCode, String str) throws SQLException {
+		List<Map<String, Object>> dataList = null;
+		
+		if (str.equals("G")) {
+			dataList = constructDAO.selectProductGroup();
+		} else if (str.equals("P")){
+			dataList = constructDAO.selectProduct();
+		}
+		
+		return dataList;
+	}
+	
+	@Override
+	public void registZone(ZoneVO zone) throws SQLException {
+		if (zone.getCm_code() == null) { //랙
+			constructDAO.insertRackInZone(zone);
+			if (zone.getTrg_code().equals("none")) { //적재기준 : 없음
+				constructDAO.insertRackInZone2(zone); 
+			}
+		} else { //구역
+			constructDAO.insertZone(zone);
+		}
+	}
+	@Override
+	public void modifyCoordinateFromZone(ZoneVO zone) throws SQLException {
+		constructDAO.updateCoordinateFromZone(zone);
+	}
+	@Override
+	public void modifyUpNoFromZone(ZoneVO zone) throws SQLException {
+		constructDAO.updateUpNoFromZone(zone);
+	}
+	@Override
+	public void removeZone(ZoneVO zone) throws SQLException {
+		constructDAO.deleteZone(zone);
+	}
+	@Override
+	public int registRack(RackVO rack) throws SQLException {
+		RackStandardVO rackStd = new RackStandardVO();
+		int seq = constructDAO.getRackSeq();
+		rack.setRk_no(seq);
+		
+		constructDAO.insertRack(rack);
+		
+		rackStd.setRk_no(seq);
+		for (int i = 1; i < rack.getRk_flr()+1; i++) {
+			rackStd.setRs_flr(i);
+			
+			constructDAO.insertRackStd(rackStd);
+		}
+		
+		return seq;
+	}
+	@Override
+	public void modifyRack(RackVO rack) throws SQLException {
+		constructDAO.updateRack(rack);
+	}
+	@Override
+	public void removeRack(RackVO rack) throws SQLException {
+		constructDAO.deleteRack(rack);
+	}
+	@Override
+	public List<RackStandardVO> getRackInfoList(int rkNo) throws SQLException {
+		List<RackStandardVO> rackStdList = null;
+		rackStdList = constructDAO.selectRackStd(rkNo);
+		return rackStdList;
+	}
+	@Override
+	public void modifyRackStd(List<Integer> no, List<Integer> min, List<Integer> max) throws SQLException {
+		RackStandardVO rackStd = new RackStandardVO();
+		for (int i = 0; i < no.size(); i++) {
+			rackStd.setRs_no(no.get(i));
+			rackStd.setMin_wgt(min.get(i));
+			rackStd.setMax_wgt(max.get(i));
+			
+			constructDAO.updateRackStd(rackStd);
+		}
+	}
+	@Override
+	public Map<String, Object> getZoneInfo(int wzNo) throws SQLException {
+		Map<String, Object> dataMap = null;
+		dataMap = constructDAO.selectZoneInfo(wzNo);
+		return dataMap;
+	}
+	@Override
+	public Map<String, Object> getRackInfo(int wzNo) throws SQLException {
+		Map<String, Object> dataMap = new HashMap<>();
+		Map<String, Object> RackInfo = null;
+		int floorCount = 0;
+		
+		RackInfo = constructDAO.selectRackInfo(wzNo);
+		floorCount = constructDAO.selectRackFloorCount(wzNo);
+		
+		dataMap.put("rack", RackInfo);
+		dataMap.put("floor", floorCount);
+		
+		return dataMap;
+	}
+	@Override
+	public List<Map<String, Object>> getItemInRackList(String invLoc) throws SQLException {
+		List<Map<String, Object>> ItemInRack = null;
+		ItemInRack = constructDAO.selectItemInRack(invLoc);
+		return ItemInRack;
+	}
+	@Override
+	public Map<String, Object> getItemInRackList2(String invLoc, String invNo) throws SQLException {
+		Map<String,Object> dataMap = new HashMap<>();
+		List<Map<String, Object>> ItemInRack = null;
+		List<Integer> CountInRack = new ArrayList<>();
+		
+		ItemInRack = constructDAO.selectItemInRack2(invLoc);
+
+		String flr = String.valueOf(invLoc.charAt(invLoc.length()-1));
+		String wh_no = invLoc.substring(0, invLoc.indexOf("-"));
+		System.out.println("!!"+invNo+"!!"+flr+"!!"+wh_no);
+		StrategyItemCommand item = strategyDAO.selectItemCommandByInvNo(invNo);
+		StrategyRackCommand rack = strategyDAO.selectRackByLoc(wh_no); // 해당 랙의 랙종류 정보 가져오기
+		
+		// 해당 랙의 수용 가능 크기
+		double volume = rack.getBlk_width() * 100 * rack.getBlk_lngth() * 100 * rack.getBlk_height() * 100; // cm 단위로
+		volume = (int) (volume*0.9); // 10%는 여유공간 
+		// 현재 해당 공간에 들어있는 재고 크기
+		
+		for(int c = 1; c <= rack.getBlk_col(); c++) {
+
+			int fill = strategyDAO.selectFillVolume(invLoc + c); // 해당 공간에 들어있는 재고 크기 계산
+			// rack_code(재고 테이블에 입력된 "wz_no-단열숫자" 값으로 재고 테이블을 다시 조회, 해당 재고의 품목,기업 코드로 품목 테이블과 조인
+			// 조인 한 후 std_code를 가지고 해당 규격의 가로 * 세로 * 높이 한 값들을 전부 count
+			if(fill < volume) {
+				int extra = (int) (volume - fill);
+				int result = extra / (item.getStd_height() * item.getStd_lngth() * item.getStd_width());
+				CountInRack.add(result); //수용 가능한 해당 물품의 갯수가 리턴된다.
+			} else {
+				CountInRack.add(0);
+			}
+			
+		}
+		
+		
+		dataMap.put("countInRack", CountInRack);
+		dataMap.put("itemInRack", ItemInRack);
+		return dataMap;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

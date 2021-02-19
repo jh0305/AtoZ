@@ -1,0 +1,94 @@
+package com.spring.AtoZ.member.controller;
+
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.member.dto.DetailMemberCommand;
+import com.spring.AtoZ.member.service.MemberService;
+import com.spring.AtoZ.vo.ClientVO;
+
+@Controller
+public class MemberController {
+
+	@Autowired
+	private MemberService memberService;
+	
+	@RequestMapping("/SY/member/memberList")
+	public ModelAndView memberList(ModelAndView mnv, SearchMap sm, @RequestParam(defaultValue="") String searchType, @RequestParam(defaultValue="") String keyword) throws Exception{
+		String url = "member/memberList.frame";
+		
+		sm.put("searchType", searchType);
+		sm.put("keyword", keyword);
+		sm.setUrl("/SY/member/memberList");
+		Map<String, Object> dataMap = memberService.getClientList(sm);
+		mnv.addAllObjects(dataMap);
+		mnv.setViewName(url);
+		return mnv;
+	}
+	
+	@RequestMapping("/SY/member/companyDetail")
+	@ResponseBody
+	public ResponseEntity<DetailMemberCommand> companyDetail(String cl_code) throws Exception {
+		DetailMemberCommand client = memberService.getClient(cl_code);
+		return new ResponseEntity<DetailMemberCommand>(client,HttpStatus.OK);
+	}
+	
+	
+	@RequestMapping("/warehouseDetail")
+	public String warehouseDetail() {
+		String url = "member/warehouseDetail.pop";
+		return url;
+	}
+	
+	@RequestMapping("/comwareDetail")
+	public String comwareDetail() {
+		String url = "member/comwareDetail.pop";
+		return url;
+	}
+	
+	@RequestMapping("/companyModify")
+	public String companyModify() {
+		String url = "member/companyModify.pop";
+		return url;
+	}
+	
+	@RequestMapping("/warehouseModify")
+	public String warehouseModify() {
+		String url = "member/warehouseModify.pop";
+		return url;
+	}
+	
+	@RequestMapping("/comwareModify")
+	public String comwareModify() {
+		String url = "member/comwareModify.pop";
+		return url;
+	}
+	
+	@RequestMapping("/findId")
+	public String findId() {
+		String url = "member/findId.pop";
+		return url;
+	}
+	
+	@RequestMapping("/findPwd")
+	public String findPwd() {
+		String url = "member/findPwd.pop";
+		return url;
+	}
+	
+	@RequestMapping("/newPwd")
+	public String newPwd() {
+		String url = "member/newPwd.pop";
+		return url;
+	}
+	
+}

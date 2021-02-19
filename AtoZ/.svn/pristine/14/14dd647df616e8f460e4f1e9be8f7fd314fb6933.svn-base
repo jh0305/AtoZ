@@ -1,0 +1,19 @@
+package com.spring.AtoZ.item.dto;
+
+public class StandardNameCheckCommand {
+	private String co_code;
+	private String std_name;
+	public String getCo_code() {
+		return co_code;
+	}
+	public void setCo_code(String co_code) {
+		this.co_code = co_code;
+	}
+	public String getStd_name() {
+		return std_name;
+	}
+	public void setStd_name(String std_name) {
+		this.std_name = std_name;
+	}
+	
+}

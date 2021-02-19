@@ -1,0 +1,67 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<div class="col-12" style="padding: 0px 15px;">
+	<div class="card" style="height: 850px;margin:0px;min-height:546px;">
+		<div class="card-header">
+			<h2 class="card-title">
+				<strong>재고 이력</strong>
+			</h2>
+		</div>
+		<div id="his_dynamic_table"></div>
+		<div id="his_list_paging"></div>
+	</div>
+</div>
+
+<script id="stock-history-template" type="text/x-handlebars-template">
+<div class="table-responsive">
+	<div class="d-flex">
+		<span style="font-weight: bold;line-height:4;padding-left: 20px;">상세 재고 현황</span>
+		<div class="ms-auto text-muted">
+			<div class="ms-2 d-inline-block" style="position: relative;left: -10%;">
+				<select class="form-select custom-select-form" onchange="javascript:choose_order(this);" id="chooseType">
+					<option value="" {{#ifeq pageMaker.searchMap.search.searchType ''}} selected {{/ifeq}}>정렬조건</option>
+					<option value="in_ymd" {{#ifeq pageMaker.searchMap.search.searchType 'in_ymd'}} selected {{/ifeq}}>입고일</option>
+					<option value="chk_ymd" {{#ifeq pageMaker.searchMap.search.searchType 'chk_ymd'}} selected {{/ifeq}}>실사일</option>
+					<option value="inv_loc" {{#ifeq pageMaker.searchMap.search.searchType 'inv_loc'}} selected {{/ifeq}}>적재위치(오름차순)</option>
+					<option value="inv_loc_desc" {{#ifeq pageMaker.searchMap.search.searchType 'inv_loc_desc'}} selected {{/ifeq}}>적재위치(내림차순)</option>
+				</select>
+			</div>
+		</div>
+	</div>
+	<table class="table card-table table-vcenter text-nowrap datatable">
+		<thead>
+			<tr style="text-align:center;">
+				<th class="w-1">No.</th>
+				<th>재고번호
+				</th>
+				<th>품목코드</th>
+				<th>품목명</th>
+				<th>규격</th>
+				<th>수량</th>
+				<th>적재위치</th>
+				<th>입고일</th>
+				<th>입고담당자</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#isEmpty stockList}}
+			<tr><td></td><td>자료가 없습니다..</td></tr>
+			{{else}}
+				{{#each stockList}}
+				<tr style="text-align:center;" class="detail_tr" onclick="javascript:history_go(this);">
+					<td><span class="text-muted">{{rownum}}</span></td>
+					<td><span class="text-muted">{{inv_no}}</span></td>
+					<td>{{item_no}}</td>
+					<td>{{item_name}}</td>
+					<td>{{std_name}}</td>
+					<td>{{inv_qty}}</td>
+					<td>{{inv_loc}}</td>
+					<td><span class="text-muted">{{in_ymd}}</span></td>
+					<td>-</td>
+				</tr>
+				{{/each}}
+			{{/isEmpty}}
+		</tbody>
+	</table>
+</div>
+</script>

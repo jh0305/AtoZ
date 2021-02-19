@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Mobile-Mapper">
+	<select id="selectEmployee" parameterType="str" resultType="emp">
+		SELECT * FROM WH_EMP WHERE EMP_ID=#{id}
+	</select>
+	<select id="selectYesterdayCheck" parameterType="str" resultType="com.spring.AtoZ.vo.AttendanceVO">
+		SELECT EMP_ID, WORK_DATE, OUT_DATE 
+		FROM (SELECT EMP_ID, WORK_DATE, OUT_DATE 
+		      FROM ATTND_HIS 
+		      WHERE EMP_ID = #{id} AND TRUNC(SYSDATE) - TRUNC(WORK_DATE) >= 1 
+		      ORDER BY WORK_DATE DESC) 
+		WHERE ROWNUM = 1
+	</select>
+	<select id="selectAttndCheck" parameterType="str" resultType="com.spring.AtoZ.vo.AttendanceVO">
+		SELECT EMP_ID, WORK_DATE, OUT_DATE FROM ATTND_HIS WHERE EMP_ID = #{id} AND TRUNC(WORK_DATE) = TRUNC(SYSDATE)
+	</select>
+	<update id="insertAttnd" parameterType="str">
+		INSERT INTO ATTND_HIS(AH_NO, EMP_ID, WORK_DATE)
+		VALUES(ATTND_HIS_SEQ.NEXTVAL, #{id}, SYSDATE)
+	</update>
+	<update id="updateAttnd" parameterType="map">
+		UPDATE ATTND_HIS 
+		SET OUT_DATE = SYSDATE 
+		WHERE EMP_ID = #{id} 
+		AND TRUNC(WORK_DATE) = TRUNC(TO_DATE(#{date}, 'YYYY-MM-DD HH24:MI:SS'))
+	</update>
+	
+	
+	<select id="selectReceiveList" parameterType="str" resultType="map">
+		SELECT ROWNUM RN, ORD_NO, CL_NAME, DELI_YMD, CM_NAME
+		FROM IN_ORDER IO, CLIENT C, CM_CODE CM
+		WHERE IO.CO_CODE = C.CL_CODE AND IO.STS_CODE = CM.CM_CODE
+		AND DELI_YMD = TO_CHAR(SYSDATE, 'YYYYMMDD') AND IO.STS_CODE = 'PR003' AND WH_MNGR = #{id}
+	</select>
+	<select id="selectOrderItemInReceive" parameterType="int" resultType="map">
+		SELECT INV_NO, I.ITEM_NAME || ' ' || S.STD_NAME ITEM, INV.INV_LOC, OI.STS_CODE,
+		(SELECT WZ_LOC FROM WH_ZONE WHERE WZ_NO = Z.UP_NO) || '-' || Z.WZ_LOC || '-' || SUBSTR(INV_LOC, INSTR(INV_LOC, '-') + 1) RACKNAME, INV_QTY QTY
+		FROM INVENTORY INV, ORDER_ITEM OI, ITEM I, STANDARD S, WH_ZONE Z
+		WHERE INV.ITEM_NO = OI.ITEM_NO AND I.ITEM_NO = INV.ITEM_NO AND I.STD_NO = S.STD_NO AND Z.WZ_NO = SUBSTR(INV_LOC, 0, INSTR(INV_LOC, '-') - 1)
+		AND ORD_NO = #{ord_no} AND INV.STS_CODE = 'IS002'
+		ORDER BY INV_LOC
+	</select>
+	<select id="selectLocOrderItem" parameterType="map" resultType="map">
+		SELECT ROWNUM RN, OI.OI_NO, INV.INV_NO, I.ITEM_NAME || ' ' || S.STD_NAME ITEM, INV.INV_QTY QTY, OI.ORD_NO
+		FROM ORDER_ITEM OI, ITEM I, INVENTORY INV, STANDARD S
+		WHERE OI.ITEM_NO = I.ITEM_NO AND I.ITEM_NO = INV.ITEM_NO AND I.STD_NO = S.STD_NO
+		AND ORD_NO = #{ordNo} AND INV_LOC = #{invLoc} AND INV.STS_CODE = 'IS002'
+	</select>
+	
+	<select id="selectReceiveItem" parameterType="int" resultType="map">
+		SELECT INV_NO, IT.ITEM_NAME, ST.STD_NAME, INV_QTY
+		FROM INVENTORY I
+		JOIN ITEM IT ON(I.ITEM_NO = IT.ITEM_NO)
+		JOIN STANDARD ST ON(IT.STD_NO = ST.STD_NO)
+		WHERE INV_NO = #{inv_no} AND I.STS_CODE = 'IS002'
+	</select>
+	
+	<update id="updateInOrder" parameterType="int">
+		UPDATE IN_ORDER
+		SET IN_YMD = TO_CHAR(SYSDATE, 'YYYYMMDD'), 
+		IN_CHRG = (SELECT SUM(QTY * ITEM_WGT * 100) FROM ORDER_ITEM OI, ITEM I WHERE OI.ITEM_NO = I.ITEM_NO AND ORD_NO = #{ord_no}),
+		STS_CODE = 'PR004'
+		WHERE ORD_NO = #{ord_no}
+	</update>
+	<update id="updateOrderItem" parameterType="map">
+		UPDATE ORDER_ITEM
+		SET IN_QTY = IN_QTY + #{in_qty}, STS_CODE = 'PR004'
+		WHERE OI_NO = #{oi_no}
+	</update>
+	<update id="updateInventory" parameterType="map">
+		UPDATE INVENTORY
+		SET INV_LOC = #{inv_loc}, STS_CODE = 'IS001', IN_YMD = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		WHERE INV_NO = #{inv_no}
+	</update>
+	<select id="selectReleaseList" parameterType="str" resultType="map">
+		SELECT ROWNUM RN, R.RLS_NO, CL.CL_NAME, R.PLAN_YMD, C.CM_NAME 
+		FROM RELEASE R 
+		JOIN CM_CODE C ON(R.TASK_CODE = C.CM_CODE)
+		JOIN CLIENT CL ON(R.DST_CODE = CL.CL_CODE)
+		WHERE EMP_ID = #{emp_id} AND R.STS_CODE = 'PR005' AND PLAN_YMD = TO_CHAR(SYSDATE, 'YYYYMMDD')
+	</select>
+	<select id="selectReleaseItemList" parameterType="int" resultType="map">
+		SELECT ROWNUM RN, INV.INV_NO, I.ITEM_NAME || ' ' || ST.STD_NAME ITEM, P.PIK_QTY QTY, I.ITEM_NO, P.RLS_NO
+		FROM PICKING P, RELEASE R, INVENTORY INV, ITEM I, STANDARD ST
+		WHERE P.RLS_NO = R.RLS_NO AND INV.INV_NO = P.INV_NO AND I.ITEM_NO = INV.ITEM_NO AND ST.STD_NO = I.STD_NO
+		AND P.RLS_NO = #{rls_no}
+	</select>
+	<update id="updateReleaseStatus" parameterType="int">
+		UPDATE RELEASE
+		SET TASK_CODE = 'RL002'
+		WHERE RLS_NO = #{rls_no}
+	</update>
+	<update id="updateReleaseStatus2" parameterType="int">
+		UPDATE RELEASE
+		SET TASK_CODE = 'RL003'
+		WHERE RLS_NO = #{rls_no}
+	</update>
+	<update id="updatePicking" parameterType="map">
+		UPDATE PICKING
+		SET QTY = #{in_qty}, STS_CODE = 'PK003'
+		WHERE RLS_NO = #{rls_no} AND INV_NO = #{inv_no}
+	</update>
+	<update id="updateRelease" parameterType="int">
+		UPDATE RELEASE
+		SET STS_CODE = 'PR006', RLS_YMD = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		WHERE RLS_NO = #{rls_no}
+	</update>
+	<update id="updateReleaseItem" parameterType="map">
+		UPDATE RLS_ITEM
+		SET RLS_QTY = RLS_QTY + #{in_qty}, STS_CODE = 'PR006'
+		WHERE RLS_NO = #{rls_no} AND ITEM_NO = #{item_no}
+	</update>
+	<update id="updateReleaseInv">
+		UPDATE INVENTORY
+		SET INV_QTY = INV_QTY - #{in_qty}
+		WHERE INV_NO = #{inv_no}
+	</update>
+	<update id="insertReleaseHistory">
+		INSERT INTO INV_HISTORY
+		VALUES(
+		INV_HISTORY_SEQ.NEXTVAL, #{inv_no}, TO_CHAR(SYSDATE, 'YYYYMMDD'), 
+		(SELECT INV_QTY FROM INVENTORY WHERE INV_NO = #{inv_no}), 0-#{in_qty}, 
+		(SELECT INV_LOC FROM INVENTORY WHERE INV_NO = #{inv_no}), '출고', #{emp_name})
+	</update>
+	
+	<!--  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹 -->
+	
+	<select id="selectPickingByNo" resultType="com.spring.AtoZ.picking.dto.PickingCommand">
+		SELECT p.*
+		FROM release r, picking p
+		WHERE r.rls_no = p.rls_no AND p.rls_no = #{rls_no} AND r.wh_mngr = #{wh_mngr} AND p.inv_no = #{inv_no} 
+	</select>
+	
+	<update id="updatePickingQnS">
+		UPDATE picking SET qty = #{qty}, sts_code = #{sts_code}
+		WHERE pik_no = #{pik_no}
+	</update> 
+	
+	<select id="selectPickingList" resultType="com.spring.AtoZ.picking.dto.PickingCommand">
+		SELECT p.inv_no, rls_no, pik_qty, qty, (SELECT cm_name FROM cm_code WHERE cm_code = sts_code) sts_code, i.inv_loc
+			(SELECT item_name FROM item WHERE item_no = i.item_no AND co_code = i.co_code) item_name,
+			(SELECT std_name FROM standard WHERE std_no = (SELECT std_no FROM item WHERE i.item_no = item_no AND i.co_code = co_code)) std_name,
+			(SELECT cl_name FROM client WHERE co_code = i.co_code) co_name
+		FROM picking p, inventory i
+		WHERE rls_no = #{rls_no} AND p.inv_no = i.inv_no
+	</select>
+	
+	<!--  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹  피킹 -->
+	
+	<!-- 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 -->
+	
+	<select id="selectInvCheck" resultType="com.spring.AtoZ.mobile.dto.InvCheckCommand">
+		SELECT *
+		FROM inv_check
+		WHERE inv_no = #{inv_no} AND bfr_loc = #{bfr_loc}
+	</select>
+
+	<update id="insertInvCheck">
+		INSERT INTO inv_check
+				(chk_no, chk_qty, cur_qty, chk_ymd, reg_name, inv_no, bfr_loc)
+		VALUES	
+				(inv_chk_seq.nextval, #{chk_qty}, #{cur_qty}, TO_CHAR(sysdate,'YYYYMMDD') , #{reg_name}, #{inv_no}, #{bfr_loc} )
+	</update>
+	
+	<update id="updateInvCheck">
+		UPDATE inv_check
+		SET chk_qty = #{chk_qty}, chk_ymd = TO_CHAR(sysdate,'YYYYMMDD'), reg_name = #{reg_name}, upd_yn = 'N'
+		WHERE chk_no = #{chk_no}
+	</update>
+	
+	<select id="selectInvCheckList" resultType="com.spring.AtoZ.mobile.dto.InvCheckCommand">
+		SELECT chk_no, chk_qty, cur_qty, inv_no,
+				(SELECT item_name FROM item WHERE item_no = (SELECT item_no FROM inventory WHERE inv_no = i.inv_no)
+						 AND co_code = (SELECT co_code FROM inventory WHERE inv_no = i.inv_no)) item_name,
+				(SELECT std_name FROM standard WHERE std_no = (SELECT std_no FROM item WHERE
+								 item_no = (SELECT item_no FROM inventory WHERE inv_no = i.inv_no)
+						 			AND co_code = (SELECT co_code FROM inventory WHERE inv_no = i.inv_no))) std_name
+		FROM inv_check i
+		WHERE bfr_loc = #{inv_loc} AND chk_ymd = TO_CHAR(sysdate, 'yyyymmdd') AND upd_yn = 'N'
+	</select>
+	
+	<select id="selectStockList" resultType="com.spring.AtoZ.mobile.dto.InvCheckCommand">
+		SELECT inv_qty cur_qty, inv_no,
+				(SELECT item_name FROM item WHERE item_no = i.item_no AND co_code = i.co_code) item_name,
+				(SELECT std_name FROM standard WHERE std_no = (SELECT std_no FROM item WHERE
+								 item_no = i.item_no AND co_code = i.co_code )) std_name
+		FROM inventory i
+		WHERE inv_loc = #{inv_loc} AND sts_code = 'IS001'
+	</select>
+	
+	
+	<update id="insertInvCheckList" parameterType="list">
+		<foreach collection="list" item="item" separator=" " open="INSERT ALL" close="SELECT * FROM DUAL">
+	        INTO inv_check
+				(chk_no, chk_qty, cur_qty, inv_no, bfr_loc)
+			VALUES
+				(get_inv_chk_seq(), 0, #{item.inv_qty}, #{item.inv_no}, #{item.inv_loc})
+		</foreach> 
+	</update>
+	
+	<select id="selectInvCheckCount" resultType="int">
+		SELECT count(*)
+		FROM inv_check
+		WHERE bfr_loc = #{inv_loc} AND chk_ymd = TO_CHAR(sysdate, 'yyyymmdd') AND upd_yn = 'N'
+	</select>
+	
+	<select id="selectStock" resultType="com.spring.AtoZ.mobile.dto.InvCheckCommand">
+		SELECT inv_no, inv_qty cur_qty,
+				(SELECT item_name FROM item WHERE item_no = i.item_no AND co_code = i.co_code) item_name,
+				(SELECT std_name FROM standard WHERE std_no = (SELECT std_no FROM item WHERE
+								 item_no = i.item_no AND co_code = i.co_code )) std_name
+		FROM inventory i
+		WHERE inv_no = #{inv_no} AND sts_code = 'IS001'
+	</select>
+	
+	<select id="selectLocationName" resultType="str">
+		SELECT SUBSTR(SYS_CONNECT_BY_PATH(wz_loc, '-'), 2, LENGTH(SYS_CONNECT_BY_PATH(wz_loc, '-')) ) || SUBSTR(#{inv_loc},INSTR(#{inv_loc} ,'-'),LENGTH(#{inv_loc})) loc_root
+		FROM wh_zone
+		WHERE wz_no = SUBSTR(#{inv_loc},0,INSTR(#{inv_loc} ,'-')-1)
+		START WITH up_no IS NULL
+		CONNECT BY PRIOR wz_no = up_no
+	</select>
+	
+	<!-- 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 실사 -->
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+

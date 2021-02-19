@@ -1,0 +1,35 @@
+body::-webkit-scrollbar{
+	display:none;
+}
+body{
+	position:fixed;
+	width:100%;
+	left:0px;
+	bottom:0px;
+}
+.login-form{
+	margin:30px auto;
+	width:90%;
+}
+.login-text{
+	font-size:1.5rem;
+	font-weight:500;
+	margin-bottom:20px;
+}
+.id-form{
+	margin-bottom:35px;
+}
+.logo-div{
+	margin-top:30%;
+}
+.logo{
+	margin:auto;
+	margin-bottom:30px;
+	width:150px;
+	height:100px;
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+}
+.h-up{
+	height:2.93rem;
+}

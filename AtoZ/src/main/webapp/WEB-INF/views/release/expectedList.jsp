@@ -1,0 +1,246 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<style>
+.clickabletr:hover{
+	background-color:#f6f4fa;
+}
+.clickabletr{
+	cursor: pointer;
+}
+tr{
+	text-align:center;
+}
+div#pag > .pagination {
+   	margin: 0px;
+}
+input#keyword, button.btn.btn-white.btn-icon {
+   	height: 32px;
+}
+h3 {
+    margin: 0;
+    margin-right: 2%;
+}
+select.form-select {
+    font-size: 14px;
+}
+.g-2 {
+    padding-top: 0px; 
+}
+</style>    
+<c:set var="searchMap" value="${pageMaker.searchMap }"/>
+	<div style="padding: 0px 15px;">
+		<h3 class="card-title">출고예정목록</h3>
+		<div class="card">
+			<div class="card-header">
+				<select class="form-select" id="searchType" style="display:inline-block; width:10%; display:inline; height:33px;">
+					<option value="" ${searchMap.get('searchType') eq '' ? 'selected' : '' }>검색 구분</option>
+					<option value="dst_name" ${searchMap.get('searchType') eq 'dst_name' ? 'selected' : '' }>도착지점명</option>
+					<option value="emp_name" ${searchMap.get('searchType') eq 'emp_name' ? 'selected' : '' }>출고담당자</option>
+				</select>
+				<input type="text" class="form-control" id="keyword" value="${searchMap.get('keyword') }" placeholder="Search for…" style="width:13%; display:inline;height:33px;">
+				<button class="btn btn-white btn-icon" aria-label="Button" style="display:inline;height:33px;" onclick="search_CompleteReleaseGo()">
+					<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+						<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+						<circle cx="10" cy="10" r="7"></circle>
+						<line x1="21" y1="21" x2="15" y2="15"></line>
+					</svg>
+				</button>
+			</div>
+
+          <div class="card-body" style="min-height: 795px;">
+            <!-- form -->
+            <div class="table-responsive">
+              <table class="table card-table table-vcenter text-nowrap datatable">
+                <thead>
+                  <tr>
+                    <th class="w-1 text-center">출고번호</th>
+                    <th class="text-center">물류센터명</th>
+                    <th class="text-center">도착지점명</th>
+                    <th class="text-center">도착지주소</th>
+                    <th class="text-center">출고요청일자</th>
+                    <th class="text-center">총 출고수량</th> <!-- 출고 품목에서 가져올 것 -->
+                    <th class="text-center">작업상태</th>
+                    <th class="text-center">절차상태</th> <!-- 승인, 반려 포함 -->
+                    <th class="text-center">출고담당자</th>
+                  </tr>
+                </thead>
+                <tbody>
+                	<c:choose>
+                		<c:when test="${empty expectedList }">
+                			<tr>
+                				<td colspan="7" style="text-align:center">등록된 출고 요청이 없습니다.</td>
+                			</tr>
+                		</c:when>
+                		<c:otherwise>
+							<c:forEach var="ExpectedRelease" items="${expectedList }" varStatus="status">
+			                  <tr class="clickabletr" onclick="openDial7($('#dialog'),900,600,'${ExpectedRelease.rls_no}','${ExpectedRelease.sts_code}','${loginUser.cl_type}','${ExpectedRelease.emp_name}');">
+			                    <td class="text-center" >${ExpectedRelease.rls_no }</td>
+			                    <td class="text-center">${ExpectedRelease.wh_name }</td>
+			                    <td class="text-center">${ExpectedRelease.co_name }</td>
+			                    <td class="text-center">${ExpectedRelease.dst_addr }</td>
+			                    <td class="text-center">
+			                    <c:choose>
+			                    <c:when test="${ExpectedRelease.plan_ymd eq null }">
+			                    	-
+			                    </c:when>
+			                    <c:otherwise>
+			                    ${fn:substring(ExpectedRelease.plan_ymd,0,4) }-${fn:substring(ExpectedRelease.plan_ymd,4,6) }-${fn:substring(ExpectedRelease.plan_ymd,6,8) }
+			                    </c:otherwise>
+			                    </c:choose>
+			                    </td>
+			                    <td class="text-center">
+			                      ${ExpectedRelease.plan_qty }
+			                    </td>
+			                    <td class="text-center">
+			                    	<c:choose>
+			                    		<c:when test="${ExpectedRelease.task_code eq 'RL001' }">
+			                    			작업대기
+			                    		</c:when>
+			                    		<c:when test="${ExpectedRelease.task_code eq 'RL002' }">
+			                    			작업중
+			                    		</c:when>
+			                    		<c:when test="${ExpectedRelease.task_code eq 'RL003' }">
+			                    			작업완료
+			                    		</c:when>
+			                    		<c:when test="${ExpectedRelease.task_code eq null }">
+			                    			-
+			                    		</c:when>
+			                    	</c:choose>
+			                    </td>
+			                    <td class="text-center">
+<%-- 			                    	<input type="text" value="${ExpectedRelease.sts_code}"> --%>
+			                    	<c:choose>
+			                    		<c:when test="${ExpectedRelease.sts_code eq 'PR001'}">
+			                    			승인 대기
+			                    		</c:when>
+			                    		<c:when test="${ExpectedRelease.sts_code eq 'PR005'}">
+			                    			출고 예정
+			                    		</c:when>
+			                    		<c:when test="${ExpectedRelease.sts_code eq 'PR006'}">
+			                    			출고
+			                    		</c:when>
+			                    		<c:when test="${ExpectedRelease.sts_code eq 'PT001'}">
+			                    			승인
+			                    		</c:when>
+			                    		<c:when test="${ExpectedRelease.sts_code eq 'PT002'}">
+			                    			거부
+			                    		</c:when>
+			                    		<c:when test="${ExpectedRelease.sts_code eq ''}">
+			                    			-
+			                    		</c:when>
+			                    	</c:choose>
+			                    </td>
+			                    <td class="emp_name text-center">${ExpectedRelease.emp_name }</td></tr>
+							</c:forEach>                		
+                		</c:otherwise>
+                	</c:choose>
+                </tbody>
+              </table>
+            </div>
+            <!-- /form -->
+          </div>
+          <div class="card-footer" style="background-color:white;">
+			<div style="float:left; padding-top: 4px;">
+				<%@ include file="/WEB-INF/views/common/pagination.jsp" %>
+			</div>
+			<div style="display:inline-block; float: right;">
+				<c:if test="${loginUser.cl_type eq 'ROLE_CO' }">
+					<button class="btn btn-light"  onclick="openDial2($('#dialog3'),1000,600);">
+	                  	요청 등록
+	                </button>
+				</c:if>
+			</div>
+		</div>
+        </div>
+       </div>
+       
+<div id="dialog" class="dialogDiv" title="출고요청조회">      
+	<c:set var="sts" value="PR001" />
+	<div class="container-xl">
+		<div class="page-header d-print-none">
+              <div class="row align-items-center">
+                  <div class="col">
+                      <h2 class="page-title">
+                          	출고 요청 조회
+                      </h2>
+                  </div>
+              </div>
+        </div>
+        
+  		<div class="card" style="padding:5px;">
+  		<form name="approveForm" id="approveForm" role="form">
+			<input type="hidden" value="" name="rls_no" id="rls">
+			<input type="hidden" value="" id="sts">
+			<input type="hidden" value="" id="clType">
+			<div class="card-header">
+				<c:if test="${loginUser.cl_type eq 'ROLE_WH' }">
+					<div id="pr001">
+						<h3>담당자 배정</h3>
+						<input type="text" class="form-control" name="emp_name" id="empname" style="background-color: #ffffff; width:30%; height:33px;" readonly="readonly">
+						<input type="hidden" class="form-control" name="emp_id" id="empid" style="width:30%; height:33px;" >
+						<button type="reset" class="btn btn-white btn-icon" style="display: inline; height:33px;" onclick="openDial2($('#dialog2'),600,700);">
+							<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24"
+								height="24" viewBox="0 0 24 24" stroke-width="2"
+								stroke="currentColor" fill="none" stroke-linecap="round"
+								stroke-linejoin="round">
+								  <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+								  <circle cx="10" cy="10" r="7"></circle>
+								  <line x1="21" y1="21" x2="15" y2="15"></line>
+							  </svg>
+						</button>
+					</div>
+					<div id="pr" >
+						<h3>담당자 배정</h3>
+						<input type="text" class="form-control" name="emp_name" id="empname2" style="background-color: #ffffff; width:30%; height:33px;" readonly="readonly">
+					</div>
+	           	</c:if>
+			</div>
+		</form>
+			<div id="releaseRequestDetail"></div>
+	        <div class="card-footer" style="background-color:white;">
+	     	    <div style="display:inline-block; float: right;" id="but" data-clType="${loginUser.cl_type }">
+	     	    <c:choose>
+		     	    <c:when test="${loginUser.cl_type eq 'ROLE_WH' }">
+						<button class="btn btn-light arbut" onclick="approve()">승인</button>
+		                <button class="btn btn-light arbut" onclick="reject()">거절</button>
+		     	    </c:when>
+		     	    <c:when test="${loginUser.cl_type eq 'ROLE_CO' }">
+		     	    	<button class="btn btn-light debut" onclick="removeRelease()">삭제</button>
+		     	    </c:when>
+	     	    </c:choose>
+	     	    	<button class="btn btn-light" onclick="closeDial($('#dialog'))">닫기</button>
+                </div>
+                <div style="display:inline-block; float: right;" id="clbut">
+	                <button class="btn btn-light" onclick="closeDial($('#dialog'))">닫기</button>
+	            </div>    
+			</div>
+		</div>
+    	</div>
+    </div>
+    
+<div id="dialog2" class="dialogDiv" title="담당자 조회">
+	<%@ include file="searchEmployee.jsp" %>
+</div>
+
+<div id="dialog3" class="dialogDiv" title="출고 승인 요청">
+	<%@ include file="releaseReq.jsp" %>
+</div>
+
+<div id="itemSearchDialog2" class="dialogDiv" title="품목검색" style="padding: 10px 10px 10px 10px;">
+	<%@ include file="releaseReqItemSearch.jsp"%>
+</div>
+
+   
+<%@ include file="releaseRequestDetail_js.jsp" %>
+
+<script>
+function search_CompleteReleaseGo(){
+	var data = {
+			searchType : $("#searchType").val(),
+			keyword : $("#keyword").val()
+	}
+	searchList_go(1,'${searchMap.url}',data);
+}
+
+</script>

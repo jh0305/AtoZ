@@ -1,0 +1,103 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="picNames" value="${picMap }"/>
+<div id="dialog" class="dialogDiv" title="물류센터 상세보기">
+	<div class="container-xl" id="modal-report" tabindex="-1"
+		style=" padding-right: 16px;" aria-modal="true"
+		role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered"
+			role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="whtitle"></h5>
+				</div>
+				<div class="modal-body">
+					<div class="mb-3">
+						<div id="carousel-controls" class="carousel slide"
+							data-bs-ride="carousel">
+							<div class="carousel-inner" id="wh-image-div"
+								style="width: 500px; height: 333px; margin: auto;">								
+							</div>
+							<a class="carousel-control-prev" href="#carousel-controls"
+								role="button" data-bs-slide="prev"> <span
+								class="carousel-control-prev-icon" aria-hidden="true"></span> <span
+								class="visually-hidden">Previous</span>
+							</a> <a class="carousel-control-next" href="#carousel-controls"
+								role="button" data-bs-slide="next"> <span
+								class="carousel-control-next-icon" aria-hidden="true"></span> <span
+								class="visually-hidden">Next</span>
+							</a>
+						</div>
+					</div>
+					<div class="modal-body">
+						<div class="row">
+							<div class="col-lg-6">
+								<div class="mb-3">
+									<label class="form-label">대표자명</label> <input type="text"
+										class="form-control" value="000" readonly id="whceo">
+								</div>
+							</div>
+							<div class="col-lg-6">
+								<div class="mb-3">
+									<label class="form-label">전화번호</label> <input type="text"
+										class="form-control" value="0000" readonly id="whtel">
+								</div>
+							</div>
+							<div class="col-lg-12">
+								<div class="mb-3">
+									<label class="form-label">주소</label> <input type="text"
+										class="form-control" value="00도 00시 000" readonly id="addr">
+								</div>
+							</div>
+							<div class="col-lg-12">
+								<div class="row">
+									<div class="col-lg-6">
+										<label class="form-label">사업자등록번호</label> <input type="text"
+											class="form-control" value="000-0000-0000" readonly id="mregno">
+									</div>
+									<div class="col-lg-6">
+										<label class="form-label">총면적</label> <input type="text"
+											class="form-control" value="000" readonly id="whtotarea">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="hr-text">CONTRACT</div>
+					<div class="modal-body" >
+						<div class="col-lg-8"></div>
+						<div class="col-lg-4">
+							<div class="ms-auto text-muted">
+								<div class="mb-3">
+									<label class="form-label">희망계약기간</label> <select
+										class="form-select" id="preperiod">
+										<option value="0" selected="selected">계약기간선택</option>
+										<option value="1" >1년</option>
+										<option value="2">2년</option>
+										<option value="3">3년</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<form method="post" id="crform">
+						<input type="hidden" name="pre_priod" id="crperiod">
+						<div id="details"></div>
+						</form>
+						<div class="modal-footer" style="margin-top: 50px;">
+							<a href="#"
+								class="btn btn-primary ms-auto" data-bs-dismiss="modal" onclick="javascript:sendContract();"> <svg
+									xmlns="http://www.w3.org/2000/svg" class="icon" width="24"
+									height="24" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor" fill="none" stroke-linecap="round"
+									stroke-linejoin="round">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+									<line x1="12" y1="5" x2="12" y2="19"></line>
+									<line x1="5" y1="12" x2="19" y2="12"></line></svg> 견적요청하기
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

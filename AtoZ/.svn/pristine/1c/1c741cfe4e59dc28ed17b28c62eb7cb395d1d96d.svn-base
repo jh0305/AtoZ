@@ -1,0 +1,215 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<div class="card" style="padding:5px; min-height: 540px;">
+	<div class="card-header" style="height: 58px;">
+	<div class="row" style="margin: 0px; padding: 0px; width: -webkit-fill-available;">
+		<div class="col-6" style="margin: 0px; padding: 0px; display: inline-block;">
+			<div class="row" style="padding: 0px 10px;">
+				<div class="col-12" style="padding: 0px;">
+					<div class="row" style="padding: 0px 10px; margin-bottom: 10px;">
+						<div class="col-2" style="padding: 0px; display: inline-block; height: 36px; line-height: 36px;">출고창고</div>
+						<div class="col-10" style="padding:0px; height: 36px; display: inline-block;">
+							<div class="col-12" style="padding: 0px 0px;">
+								<div class="row" style="margin: 0px 0px 5px 0px;">
+									<div style="display: inline-block; height: 36px; padding: 0px 10px 0px 0px;" class="col-10">
+										<div class="col-12">
+											<input disabled id="inWH" name="wh_code" type="hidden" class="form-control" placeholder="code or name" style="background-color:white; border-radius: 3px;">
+											<input disabled id="whname" type="text" class="form-control" placeholder="돋보기 버튼을 이용하여 선택하세요." style="background-color:white; border-radius: 3px;">
+										</div>
+									</div>
+			
+									<div class="col-2" style="display: inline-block; height: 34px; padding: 0px 0px;">
+										<button type="reset" class="btn btn-white btn-icon" style="display: inline; height:33px;" onclick="openDial($('#dialog4'),600,700);">
+											<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24"
+												height="24" viewBox="0 0 24 24" stroke-width="2"
+												stroke="currentColor" fill="none" stroke-linecap="round"
+												stroke-linejoin="round">
+												  <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+												  <circle cx="10" cy="10" r="7"></circle>
+												  <line x1="21" y1="21" x2="15" y2="15"></line>
+											  </svg>
+										</button>
+									</div>
+
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</div>
+	<div class="col-12 card-body" style="padding: 0px 8px; min-height:330px; overflow-y:auto;  ">
+			<div class="table-responsive" style="margin-bottom: 0px;">
+				<table class="table table-vcenter card-table">
+					<thead class="">
+						<tr>
+							<th style="width: 0.1%; padding: 8px 8px 8px 16px;"><svg onclick="addOrderItemRow(this);" class="icon_Plus myIcon" style="color: #dedede; cursor: pointer;" xmlns="http://www.w3.org/2000/svg" class="icon"
+									width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+									<path stroke="none" d="M0 0h24v24H0z" fill="none" />
+									<line x1="12" y1="5" x2="12" y2="19" />
+									<line x1="5" y1="12" x2="19" y2="12" /></svg></th>
+							<th class="col-1 text-center">품목코드</th>
+							<th class="col-1 text-center">품목명</th>
+							<th class="col-1 text-center">거래처코드</th>
+							<th class="col-1 text-center">거래처명</th>
+							<th class="col-1 text-center">규격</th>
+							<th class="col-1 text-center">수량(BOX)</th>
+						</tr>
+					</thead>
+					<tbody id="myTbody">
+						<tr class="item-tr item_false"><td><svg class="icon_Minus myIcon" style="color: #dedede; cursor: pointer;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line></svg></td><td name="item_code" class="item-code text-center"><div class="col-12 text-center"><div onclick="goFindElement(this);openItemSearch(this);" style="border: 1px solid #D1D4D7; border-radius:3px; background-color:#F3F6FA; cursor: pointer;"><svg style="margin: 7px 0px;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="10" cy="10" r="7"></circle><line x1="21" y1="21" x2="15" y2="15"></line></svg></div></div></td><td name="item_name" class="item-name text-center"></td><td name="cprt_code" class="cprt-code text-center"></td><td name="cprt_name" class="cprt-name text-center"></td><td name="item_std" class="item-std text-center"></td><td name="item_ea" class="item-ea text-center"><input value="0" style="padding: 3px 0px; text-align:center; margin:auto; width:50%;" maxlength="3" type="text" class="item_ea_value form-control"></td></tr>
+						<tr class="item-tr item_false"><td><svg class="icon_Minus myIcon" style="color: #dedede; cursor: pointer;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line></svg></td><td name="item_code" class="item-code text-center"><div class="col-12 text-center"><div onclick="goFindElement(this);openItemSearch(this);" style="border: 1px solid #D1D4D7; border-radius:3px; background-color:#F3F6FA; cursor: pointer;"><svg style="margin: 7px 0px;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="10" cy="10" r="7"></circle><line x1="21" y1="21" x2="15" y2="15"></line></svg></div></div></td><td name="item_name" class="item-name text-center"></td><td name="cprt_code" class="cprt-code text-center"></td><td name="cprt_name" class="cprt-name text-center"></td><td name="item_std" class="item-std text-center"></td><td name="item_ea" class="item-ea text-center"><input value="0" style="padding: 3px 0px; text-align:center; margin:auto; width:50%;" maxlength="3" type="text" class="item_ea_value form-control"></td></tr>
+						<tr class="item-tr item_false"><td><svg class="icon_Minus myIcon" style="color: #dedede; cursor: pointer;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line></svg></td><td name="item_code" class="item-code text-center"><div class="col-12 text-center"><div onclick="goFindElement(this);openItemSearch(this);" style="border: 1px solid #D1D4D7; border-radius:3px; background-color:#F3F6FA; cursor: pointer;"><svg style="margin: 7px 0px;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="10" cy="10" r="7"></circle><line x1="21" y1="21" x2="15" y2="15"></line></svg></div></div></td><td name="item_name" class="item-name text-center"></td><td name="cprt_code" class="cprt-code text-center"></td><td name="cprt_name" class="cprt-name text-center"></td><td name="item_std" class="item-std text-center"></td><td name="item_ea" class="item-ea text-center"><input value="0" style="padding: 3px 0px; text-align:center; margin:auto; width:50%;" maxlength="3" type="text" class="item_ea_value form-control"></td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	<div class="card-footer" style="background-color:white; height: 50px;">
+		<div style="display:inline-block; float: right;">
+			<button type="button" onclick="goRegistOrder();" class="btn">등록</button>
+			<button type="button" onclick="closeDial($('#dialog3'));" class="btn">취소</button>
+		</div>
+	</div>
+</div>
+<div id="dialog4" class="dialogDiv" title="물류센터 조회">
+	<%@ include file="whSearch.jsp" %>
+</div>
+<%@ include file="/WEB-INF/views/common/popupDial_js.jsp" %>
+<script>
+function wareList(){
+	$.ajax({
+		url:'<%=request.getContextPath()%>/WH/release/getWareList',
+		cache : false,
+		async:false,
+		dataType:"json",
+		type:'get',
+		success:function(data){
+			var dataList = data.dataList;
+			console.log(dataList);
+			var source =$('#ware-list-template').html();
+ 			var template = Handlebars.compile(source);
+ 			$('#whInfo_tbody').html(template(dataList));
+		},
+		error:function(error, status){
+			console.log(error+" + "+status);
+		}
+		
+	})
+}
+</script>
+
+<script>
+	function goOrderDataCheck(){
+		if($('#req_year').val()	== null ||
+		   $('#req_month').val() == null ||
+		   $('#req_day').val()	== null ||
+		   $('#input_mgr').val() == "" ||
+		   $('#inWH').val() == "" ||
+		   $('#deli_year').val() == "" ||
+		   $('#deli_month').val() == "" ||
+		   $('#deli_day').val() == "" ||
+		   $('.item-code').text() == "" ||
+		   $('.item_ea_value').val() == ""){
+			alert("입력하지 않은 데이터가 있습니다.");
+			return false;
+		}else{
+			return true;
+		}	
+	};
+	
+	// 등록 버튼 클릭시, 인서트
+	function goRegistOrder(){
+		
+		if(goOrderDataCheck() != true){return;};
+		
+		var item_tr = $("#myTbody").children(".item_true");
+		
+		// tbody의 모든 tr 안에 있는 품목코드,수량 td 값을 담는다.
+		var itemArray = [];
+		
+		$.each(item_tr, function(i){
+			var data = {
+				item_no : $(item_tr[i]).find(".item-code").text(),
+				qty : $(item_tr[i]).find(".item_ea_value").val()
+	 		};
+			itemArray.push(data);
+		});
+		
+		var form = {
+			wh_code  : $('#inWH').val(),
+			req_ymd  : $('#req_year').val().toString() + $('#req_month').val().toString() + $('#req_day').val().toString(),
+			deli_ymd : $('#deli_year').val().toString() + $('#deli_month').val().toString() + $('#deli_day').val().toString(),
+			ord_mngr : $('#input_mgr').val(),
+ 			itemArray: itemArray
+		};		
+		var formj = JSON.stringify(form);
+		console.log(form);
+		console.log(formj);
+		
+		$.ajax({
+			url : "<%=request.getContextPath()%>/CO/order/registOrder",
+			data : formj, 	
+			datatype :'json',
+			type : 'post',			
+			success : function(res) {
+				//console.log("regist success");
+				location.reload();
+				alert("등록 완료");
+			},
+			error : function(req) {
+				alert("상태 : " + req.status);
+			}
+		});
+	}
+	
+	// + - 아이콘 이벤트
+	$("body").on("mouseover", ".myIcon", function(){
+		$(this).css("color", "#646E77");
+	});
+    $("body").on("mouseleave", ".myIcon", function(){
+    	$(this).css("color", "#dedede");
+    });
+                	    
+	var mySvg = "";
+	mySvg += '<div class="col-12 text-center">'
+	mySvg += '<div onclick="goFindElement(this);openItemSearch(this);" style="border: 1px solid #D1D4D7; border-radius:3px; background-color:#F3F6FA; cursor: pointer;">'
+	mySvg += '<svg style="margin: 7px 0px;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">'
+	mySvg += '<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>'
+	mySvg += '<circle cx="10" cy="10" r="7"></circle>'
+	mySvg += '<line x1="21" y1="21" x2="15" y2="15"></line></svg></div></div>'
+                	
+	// + 버튼을 누르면 액션, 행을 추가 한다.
+    function addOrderItemRow(th){
+		var tbody = $(th).parents('table').find('tbody');
+    	$(tbody).append($(  			
+    			'<tr class="item-tr item_false">'
+    				+ '<td ><svg class="icon_Minus myIcon" style="color: #dedede; cursor: pointer;" xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="5" y1="12" x2="19" y2="12" /></svg></td>'
+    				+ '<td name="item_code" class="item-code text-center">' + mySvg + '</td>'
+    				+ '<td name="item_name" class="item-name text-center"></td>'
+    				+ '<td name="cprt_code" class="cprt-code text-center"></td>'
+    				+ '<td name="cprt_name" class="cprt-name text-center"></td>'
+    				+ '<td name="item_std" class="item-std text-center"></td>'
+    				+ '<td name="item_ea" class="item-ea text-center"><input value="0" style="padding: 3px 0px; text-align:center; margin:auto; width:50%;" maxlength=3 type="text" class="item_ea_value form-control"/></td>'
+   				+ "</tr>"
+		));
+    };
+	
+	// - 버튼을 누르면 액션, 행을 삭제 한다.
+	$("body").on("click", ".icon_Minus", function(){ 
+    	$(this).parent().parent().remove();
+    });
+    
+	//기타
+    function goClear(){
+    	$("#wh_tbody").empty();	
+    };
+    
+	// 돋보기 버튼을 클릭하면 액션, 품목검색 다이어그램 오픈. 
+	var openItemSearch_tbody = null;
+    function openItemSearch(th){
+    	openItemSearch_tbody = $(th).parents('tbody');
+    	
+    	openDial($('#itemSearchDialog'), 480, 600, false);
+    }
+</script>

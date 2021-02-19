@@ -1,0 +1,195 @@
+package com.spring.AtoZ.charge.controller;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.spring.AtoZ.charge.dto.ChargeCommand;
+import com.spring.AtoZ.charge.dto.ConfirmCommand;
+import com.spring.AtoZ.charge.service.ChargeService;
+import com.spring.AtoZ.common.dto.SearchMap;
+import com.spring.AtoZ.vo.ClientVO;
+import com.spring.AtoZ.vo.OrderVO;
+import com.spring.AtoZ.vo.PaymentVO;
+
+
+/***
+ * 
+ * @author 0121 심민규
+ * 
+ * 물류센터 측에서 청구관리는 메인 페이지 하나에서 이루어 지고, 탭으로 청구필요리스트(디폴트), 청구완료리스트(클릭), 결제현황조회(클릭) 가 가능하다. 
+ * 
+ * 입고가 완료되었고, 입고 처리에서 작업비용의 산출이 완료된건을 화면에서 조회하여 청구에 필요한 리스트를 우선 조회하게 되고 후 작업을 가능케 한다.  
+ *
+ */
+
+@Controller
+public class ChargeController {
+	
+	@Autowired
+	ChargeService chargeService;
+	
+	// 메인 페이지
+	@RequestMapping("/WH/charge/main")
+	public String main() throws Exception{
+		String url = "charge/main";
+		return url;
+	}
+	
+	// 메인 페이지 청구필요목록
+	@RequestMapping("/WH/charge/chargeRequestList")
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> chargeMainChargeRequestList(SearchMap sm, String keyword, HttpSession session) throws Exception{
+		ResponseEntity<Map<String, Object>> entity = null;
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String wh_code = loginUser.getCl_code();
+		
+		sm.setUrl("/WH/charge/chargeRequestList");
+		sm.put("keyword", keyword);
+		sm.put("wh_code", wh_code);
+		
+		try {
+			Map<String, Object> dataMap = chargeService.getChargeMainChargeRequestList(sm);
+			entity = new ResponseEntity<Map<String, Object>>(dataMap,HttpStatus.OK);
+		} catch (SQLException e) {
+			entity = new ResponseEntity<Map<String, Object>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return entity;
+	}
+	
+	// 메인 페이지 청구완료목록
+	@RequestMapping("/WH/charge/chargeResultList")
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> chargeMainChargeResultList(SearchMap sm, String keyword, HttpSession session) throws Exception{
+		ResponseEntity<Map<String, Object>> entity = null;
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String wh_code = loginUser.getCl_code();
+		
+		sm.setUrl("/WH/charge/chargeResultList");
+		sm.put("keyword", keyword);
+		sm.put("wh_code", wh_code);
+		
+		try {
+			Map<String, Object> dataMap = chargeService.getChargeMainChargeResultList(sm);
+			entity = new ResponseEntity<Map<String, Object>>(dataMap,HttpStatus.OK);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			entity = new ResponseEntity<Map<String, Object>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return entity;
+	}
+	
+	
+	
+	@RequestMapping(value="/WH/charge/getContractCO", method=RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<List<ClientVO>> getContractCO(String searchData, HttpSession session) throws Exception{
+		
+		ResponseEntity<List<ClientVO>> entity = null;
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String cl_code = loginUser.getCl_code();
+
+		map.put("searchData", searchData);
+		map.put("wh_code", cl_code);
+		
+		try {
+			List<ClientVO> contractCO = chargeService.getContractCO(map);
+			entity = new ResponseEntity<List<ClientVO>>(contractCO,HttpStatus.OK);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			entity = new ResponseEntity<List<ClientVO>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return entity;
+	}
+	
+	@RequestMapping(value="/WH/charge/confirmForm", method=RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<List<ConfirmCommand>> getConfirmForm(String co_code, HttpSession session) throws Exception{
+		
+		ResponseEntity<List<ConfirmCommand>> entity = null;
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String wh_code = loginUser.getCl_code();
+		
+		map.put("co_code", co_code);
+		map.put("wh_code", wh_code);
+		
+		try {
+			List<ConfirmCommand> charge = chargeService.getConfirmForm(map);
+			entity = new ResponseEntity<List<ConfirmCommand>>(charge,HttpStatus.OK);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			entity = new ResponseEntity<List<ConfirmCommand>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return entity;
+	}
+	
+	@RequestMapping(value="/WH/charge/registCharge", method=RequestMethod.POST)
+	@ResponseBody
+	public void registCharge(HttpSession session, @RequestParam(value="ord_no_array[]") String[] ord_no_array, String pay_chg, String content) throws Exception{
+		PaymentVO payment = new PaymentVO();
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String wh_code = loginUser.getCl_code();
+		
+		payment.setPay_chg(pay_chg);
+		payment.setContent(content);
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("payment", payment);
+		map.put("order", ord_no_array);
+		
+		try {
+			chargeService.registCharge(map);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	@RequestMapping(value="/WH/charge/chargeDetail", method=RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<List<ChargeCommand>> getChargeDetailForm(HttpSession session, String pay_no) throws Exception{
+		ResponseEntity<List<ChargeCommand>> entity = null;
+		
+		ClientVO loginUser = (ClientVO) session.getAttribute("loginUser");
+		String wh_code = loginUser.getCl_code();
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("wh_code", wh_code);
+		map.put("pay_no", pay_no);
+		
+		try {
+			List<ChargeCommand> order = chargeService.getChargeDetailForm(map);
+			entity = new ResponseEntity<List<ChargeCommand>>(order,HttpStatus.OK);
+		} catch (SQLException e) {
+			entity = new ResponseEntity<List<ChargeCommand>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return entity;
+		
+	}
+	
+	
+}

@@ -1,0 +1,59 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<div class="col-12" style="margin-bottom: 15px;">
+	<div class="card">
+		<div class="table-responsive" style="margin-bottom: 0px;">
+			<table class="table table-vcenter card-table">
+				<thead id="detail_tbody_charge">
+					<tr class="text-center">
+						<th class="col-2">작업비용</th>
+						<td class="col-2"><span id="detail_total_in_chrg"> </span> 원</td>
+						<th class="col-2">월사용료</th>
+						<td class="col-2"><span id="detail_mnth_chrg"></span> 원</td>
+						<th class="col-2">합</th>
+						<td class="col-2"><span id="detail_total_chrg"></span> 원</td>
+					</tr>
+				</thead>
+			</table>
+		</div>
+	</div>
+</div>
+
+<div class="col-12" style="margin-bottom: 15px;">
+	<div class="card">
+		<div class="table-responsive" style="margin-bottom: 0px;">
+			<table class="table table-vcenter card-table">
+				<thead class="">
+					<tr>
+						<th class="col-1 text-center">입고번호</th>
+						<th class="col-1 text-center">입고일자</th>
+						<th class="col-2 text-center">입고품목</th>
+						<th class="col-1 text-center">입고수량</th>
+						<th class="col-1 text-center">기업이름</th>
+						<th class="col-1 text-center">작업비용</th>
+					</tr>
+				</thead>
+				<div>
+					<tbody id="detail_tbody">
+
+					</tbody>
+				</div>
+
+			</table>
+		</div>
+	</div>
+</div>
+
+<script type="text/x-handlebars-template" id="detail-tbody-template">
+{{#each .}}
+    <tr name="detail-tr">
+        <td style="display:none;" name="co_code">{{co_code}}</td>
+        <td name="ord_no" class="text-center">{{ord_no}}</td>
+        <td class="text-center">{{makeYMD in_ymd}}</td>
+        <td class="text-center">{{makeItemName item_name item_qty}}</td>
+        <td name="in_qty" class="text-center">{{in_qty}}EA</td>
+        <td class="text-center">{{co_name}}</td>
+        <td class="text-center">{{numberFormat in_chrg}}원</td>
+    <tr>
+{{/each}}
+</script>
